@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
 export const metadata: Metadata = {
@@ -147,14 +148,14 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link href={appHref} className={btnPrimary}>
-                Start Building Your Resume
-              </Link>
-              <a href="#pricing" className={btnSecondary}>
-                See Pricing
-              </a>
-            </div>
+            <HomeHeroCtas
+              appHref={appHref}
+              btnPrimary={btnPrimary}
+              btnSecondary={btnSecondary}
+            />
+            <p className="mt-3 text-center text-sm text-zinc-400">
+              Try it free — only pay to download
+            </p>
           </div>
         </section>
 
@@ -238,6 +239,9 @@ export default async function Home() {
           className="scroll-mt-16 border-b border-zinc-800 bg-zinc-950 px-4 py-9 sm:px-6 sm:py-10"
         >
           <div className="mx-auto max-w-4xl">
+            <p className="mb-2 text-center text-sm text-zinc-400 sm:mb-2.5">
+              Try it free — only pay to download
+            </p>
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>

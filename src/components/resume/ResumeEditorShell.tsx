@@ -427,7 +427,10 @@ export function ResumeEditorShell({
               <button
                 type="button"
                 className={btnSecondary}
-                onClick={() => void downloadPdf()}
+                onClick={() => {
+                  console.log("DOWNLOAD_PDF_CLICK");
+                  void downloadPdf();
+                }}
                 disabled={pdfLoading || saveStatus === "saving"}
               >
                 {pdfLoading ? "Preparing PDF…" : "Download PDF"}
