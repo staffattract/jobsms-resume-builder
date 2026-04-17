@@ -261,10 +261,6 @@ export default async function Home() {
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>
-            <p className="mx-auto mt-2 max-w-lg text-center text-xs text-zinc-500 sm:text-sm">
-              Start free. Build and preview your resume — you’ll choose your plan
-              when you download.
-            </p>
             <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-lg sm:p-7">
                 <h3 className="text-lg font-semibold text-white">Download once</h3>
@@ -274,12 +270,9 @@ export default async function Home() {
                 <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                   Perfect for a single job application
                 </p>
-                <p className="mt-5 text-center text-sm text-zinc-400">
+                <p className="mt-5 text-center text-sm leading-relaxed text-zinc-400">
                   Try it free — only pay if you download. No credit card required.
                 </p>
-                <Link href="/register" className={`${btnSecondary} mt-4 w-full border-zinc-700`}>
-                  Get started
-                </Link>
               </div>
               <div className="relative rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-b from-emerald-950/50 to-zinc-900 p-6 shadow-xl shadow-emerald-950/20 sm:p-7">
                 <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950">
@@ -304,16 +297,23 @@ export default async function Home() {
                     AI improvements anytime
                   </li>
                 </ul>
-                <p className="mt-5 text-center text-sm text-zinc-400">
+                <p className="mt-5 text-center text-sm leading-relaxed text-zinc-400">
                   Try it free — only pay if you download. No credit card required.
                 </p>
-                <Link
-                  href="/register"
-                  className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400"
-                >
-                  Get Resume Pro
-                </Link>
               </div>
+            </div>
+
+            <div className="mx-auto mt-8 flex max-w-md flex-col items-center sm:mt-9">
+              <Link
+                href="/register"
+                className={`${btnPrimary} w-full px-8 py-4 text-base font-semibold shadow-xl shadow-black/35 sm:w-auto sm:min-w-[280px]`}
+              >
+                Get Started for Free
+              </Link>
+              <p className="mt-2.5 max-w-lg text-center text-[13px] leading-snug text-zinc-200 sm:text-sm">
+                Start free. Build and preview your resume — you’ll choose your plan
+                when you download.
+              </p>
             </div>
           </div>
         </section>
