@@ -258,7 +258,7 @@ export default async function Home() {
                 <p className="mt-5 text-center text-sm text-zinc-400">
                   Try it free — only pay if you download. No credit card required.
                 </p>
-                <Link href={appHref} className={`${btnSecondary} mt-4 w-full border-zinc-700`}>
+                <Link href="/register" className={`${btnSecondary} mt-4 w-full border-zinc-700`}>
                   Get started
                 </Link>
               </div>
@@ -289,7 +289,7 @@ export default async function Home() {
                   Try it free — only pay if you download. No credit card required.
                 </p>
                 <Link
-                  href={appHref}
+                  href="/register"
                   className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400"
                 >
                   Get Resume Pro

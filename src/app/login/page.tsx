@@ -42,11 +42,11 @@ export default function LoginPage() {
           <SignInForm />
         </div>
 
-        <p className="mt-6 text-center text-xs leading-relaxed text-zinc-500 sm:text-sm">
+        <p className="mt-6 text-center text-sm leading-relaxed text-zinc-400 sm:text-base">
           New here?{" "}
           <Link
             href="/register"
-            className="font-medium text-zinc-300 underline-offset-2 transition hover:text-white hover:underline"
+            className="font-semibold text-zinc-200 underline decoration-zinc-500/80 underline-offset-4 transition hover:text-white hover:decoration-white"
           >
             Create an account
           </Link>
