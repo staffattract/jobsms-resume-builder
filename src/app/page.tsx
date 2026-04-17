@@ -153,8 +153,8 @@ export default async function Home() {
               btnPrimary={btnPrimary}
               btnSecondary={btnSecondary}
             />
-            <p className="mt-3 text-center text-sm text-zinc-400">
-              Try it free — only pay to download
+            <p className="mt-5 text-center text-base text-zinc-300 sm:text-lg">
+              Try it free — only pay if you download. No credit card required.
             </p>
           </div>
         </section>
@@ -239,9 +239,6 @@ export default async function Home() {
           className="scroll-mt-16 border-b border-zinc-800 bg-zinc-950 px-4 py-9 sm:px-6 sm:py-10"
         >
           <div className="mx-auto max-w-4xl">
-            <p className="mb-2 text-center text-sm text-zinc-400 sm:mb-2.5">
-              Try it free — only pay to download
-            </p>
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>
@@ -258,7 +255,10 @@ export default async function Home() {
                 <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                   Perfect for a single job application
                 </p>
-                <Link href={appHref} className={`${btnSecondary} mt-6 w-full border-zinc-700`}>
+                <p className="mt-5 text-center text-sm text-zinc-400">
+                  Try it free — only pay if you download. No credit card required.
+                </p>
+                <Link href={appHref} className={`${btnSecondary} mt-4 w-full border-zinc-700`}>
                   Get started
                 </Link>
               </div>
@@ -285,9 +285,12 @@ export default async function Home() {
                     AI improvements anytime
                   </li>
                 </ul>
+                <p className="mt-5 text-center text-sm text-zinc-400">
+                  Try it free — only pay if you download. No credit card required.
+                </p>
                 <Link
                   href={appHref}
-                  className="mt-6 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400"
+                  className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400"
                 >
                   Get Resume Pro
                 </Link>
