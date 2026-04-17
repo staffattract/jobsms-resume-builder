@@ -1,13 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SignInForm } from "./sign-in-form";
+import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = {
-  title: "Sign in — Resume builder",
-  description: "Sign in to edit and export your resumes.",
+  title: "Create account — Resume builder",
+  description: "Create an account to build and export your resume.",
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
@@ -30,25 +30,25 @@ export default function LoginPage() {
       <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Sign in to continue
+            Create your account
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Access your resumes, AI writing tools, and PDF downloads — all in one
-            place.
+            Start free — build and refine your resume with AI. You only pay when
+            you’re ready to download a PDF.
           </p>
         </div>
 
         <div className="mt-8 sm:mt-10">
-          <SignInForm />
+          <RegisterForm />
         </div>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-zinc-500 sm:text-sm">
-          New here?{" "}
+          Already have an account?{" "}
           <Link
-            href="/register"
+            href="/login"
             className="font-medium text-zinc-300 underline-offset-2 transition hover:text-white hover:underline"
           >
-            Create an account
+            Sign in
           </Link>
         </p>
       </div>

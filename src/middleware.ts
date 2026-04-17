@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const path = request.nextUrl.pathname;
 
-  if (path === "/login" || path.startsWith("/login/")) {
+  if (path === "/login" || path.startsWith("/login/") || path === "/register") {
     if (token) {
       return NextResponse.redirect(new URL("/resumes", request.url));
     }
@@ -24,5 +24,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/resumes/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/resumes/:path*", "/login", "/register"],
 };
