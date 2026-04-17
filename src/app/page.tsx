@@ -39,12 +39,31 @@ export default async function Home() {
           <span className="text-sm font-semibold tracking-tight text-white">
             Resume builder
           </span>
-          <Link
-            href={user ? "/resumes" : "/login"}
-            className="text-sm font-semibold text-zinc-400 transition hover:text-white"
-          >
-            {user ? "My resumes" : "Sign in"}
-          </Link>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <Link
+                href="/resumes"
+                className="text-sm font-semibold text-zinc-400 transition hover:text-white"
+              >
+                My resumes
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-zinc-300 transition hover:text-zinc-100"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-lg border border-zinc-600 bg-zinc-900/50 px-3 py-1.5 text-sm font-semibold text-zinc-100 shadow-sm shadow-black/20 transition hover:border-zinc-500 hover:bg-zinc-800/70"
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -243,8 +262,8 @@ export default async function Home() {
               Simple pricing
             </h2>
             <p className="mx-auto mt-2 max-w-lg text-center text-xs text-zinc-500 sm:text-sm">
-              Pay when you’re ready to export. Prices shown for clarity — final
-              amount at checkout.
+              Start free. Build and preview your resume — you’ll choose your plan
+              when you download.
             </p>
             <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-lg sm:p-7">
