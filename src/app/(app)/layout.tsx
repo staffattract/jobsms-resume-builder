@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { GrantPdfEntitlementButton } from "@/components/dev/GrantPdfEntitlementButton";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { logoutAction } from "@/lib/auth/form-actions";
 
@@ -50,9 +49,6 @@ export default async function AppLayout({
             >
               {user.email}
             </span>
-            {process.env.NODE_ENV !== "production" ? (
-              <GrantPdfEntitlementButton />
-            ) : null}
             <form action={logoutAction}>
               <button
                 type="submit"

@@ -27,7 +27,7 @@ Review before pointing a production domain at the app. Not exhaustive — verify
 ## UI / product
 
 - [ ] Paywall and checkout flows tested end-to-end in **live** Stripe (small real charge or Stripe test clock as appropriate).
-- [ ] No reliance on dev-only routes in production (`/api/dev/*` is disabled when `NODE_ENV === "production"`).
+- [ ] No dev-only entitlement bypass routes in the deployed app (the former `/api/dev/grant-pdf-entitlement` helper has been removed).
 
 ## Data / migrations
 
