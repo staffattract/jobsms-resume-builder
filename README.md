@@ -1,4 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) resume builder app.
+
+## Configuration
+
+- **Environment variables**: see [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md). Copy `.env.example` to `.env.local`.
+- **Prisma migrations**: read [`docs/MIGRATIONS.md`](docs/MIGRATIONS.md) for ordering notes and deploy practices.
+- **Pre-launch checklist**: [`docs/LAUNCH_READINESS.md`](docs/LAUNCH_READINESS.md).
 
 ## Getting Started
 

@@ -1,0 +1,80 @@
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Application user. `passwordHash` is reserved for credential auth (bcrypt/argon2) in a later phase.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  /// PDF access tier (Stripe webhooks and Checkout update these fields).
+  pdfEntitlementTier PdfEntitlementTier @default(FREE)
+  /// When tier is ONE_TIME, downloads allowed while remaining is greater than zero (server decrements after each PDF).
+  pdfOneTimeDownloadsRemaining Int @default(0)
+  /// When tier is SUBSCRIPTION, PDFs allowed while this is in the future.
+  subscriptionValidUntil DateTime?
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+
+  resumes Resume[]
+  sessions Session[]
+}
+
+/// Prevents duplicate application of Stripe `checkout.session.completed` (e.g. credit double-grant).
+model ProcessedStripeEvent {
+  id              String   @id @default(cuid())
+  stripeEventId   String   @unique
+  createdAt       DateTime @default(now())
+}
+
+/// Server-side session for cookie auth (opaque token stored in DB, sent via HttpOnly cookie).
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Resume document: structured JSON is the source of truth for builder, preview, and future PDF export.
+model Resume {
+  id            String       @id @default(cuid())
+  userId        String
+  title         String       @default("Untitled Resume")
+  status        ResumeStatus @default(DRAFT)
+  schemaVersion Int          @default(1)
+  content       Json         @default("{}")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum ResumeStatus {
+  DRAFT
+  ARCHIVED
+}
+
+enum PdfEntitlementTier {
+  FREE
+  ONE_TIME
+  SUBSCRIPTION
+}
