@@ -42,3 +42,5 @@ Single reference for configuration. Values are read at runtime (build/runtime fo
 ## Prisma
 
 `prisma.config.ts` reads `DATABASE_URL` for migrations and CLI. The schema does not duplicate the URL (Prisma 7 style).
+
+The client is generated into **`src/generated/prisma`** (gitignored). Imports use **`@/generated/prisma/client`**, matching the generated `client.ts`. **`npm install`** runs **`prisma generate`** via `postinstall`; **`npm run build`** runs it again before `next build` so CI (e.g. Vercel) never compiles without a client.
