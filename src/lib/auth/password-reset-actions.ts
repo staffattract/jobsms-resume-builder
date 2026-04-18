@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { generatePasswordResetToken } from "@/lib/auth/reset-token";
@@ -16,6 +15,8 @@ export type PasswordResetRequestState = { ok?: boolean; error?: string };
 export type PasswordResetCompleteState = {
   error?: string;
   invalidToken?: boolean;
+  /** Client navigates to `/login?reset=success` (same origin as the open tab). */
+  succeeded?: boolean;
 };
 
 /** Constant-time-ish work so missing accounts don’t return much faster than hits. */
@@ -118,5 +119,5 @@ export async function completePasswordResetAction(
     await tx.session.deleteMany({ where: { userId: user.id } });
   });
 
-  redirect("/login?reset=1");
+  return { succeeded: true };
 }

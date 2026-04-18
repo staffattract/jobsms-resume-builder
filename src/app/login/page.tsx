@@ -13,7 +13,10 @@ export default async function LoginPage({
   searchParams: Promise<{ reset?: string | string[] }>;
 }) {
   const sp = await searchParams;
-  const showResetOk = sp.reset === "1" || sp.reset === "true";
+  const reset = sp.reset;
+  const resetVal = Array.isArray(reset) ? reset[0] : reset;
+  const showResetOk =
+    resetVal === "success" || resetVal === "1" || resetVal === "true";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">

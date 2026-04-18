@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 import {
   completePasswordResetAction,
   type PasswordResetCompleteState,
@@ -19,10 +20,25 @@ type Props = {
 };
 
 export function ResetPasswordForm({ token }: Props) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<
     PasswordResetCompleteState,
     FormData
   >(completePasswordResetAction, {});
+
+  useEffect(() => {
+    if (state?.succeeded) {
+      router.replace("/login?reset=success");
+    }
+  }, [state?.succeeded, router]);
+
+  if (state?.succeeded) {
+    return (
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 text-center text-sm text-zinc-400 shadow-2xl shadow-black/40 ring-1 ring-white/[0.05] sm:p-8">
+        Password updated. Taking you to sign in…
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 shadow-2xl shadow-black/40 ring-1 ring-white/[0.05] sm:p-8">
