@@ -30,7 +30,7 @@ function CheckRow({ children }: { children: ReactNode }) {
 
 export default async function Home() {
   const user = await getCurrentUser();
-  const appHref = user ? "/resumes" : "/login";
+  const appHref = user ? "/resumes" : "/register";
 
   return (
     <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
