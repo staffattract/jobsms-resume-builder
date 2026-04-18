@@ -31,21 +31,17 @@ model User {
   resumes Resume[]
   sessions Session[]
   analyticsEvents AnalyticsEvent[]
-  passwordResetTokens PasswordResetToken[]
 }
 
-/// Single-use password reset secret (store hash only; raw token sent by email).
+/// Single-use password reset token (1h TTL). Lookup by `token` only.
 model PasswordResetToken {
-  id        String    @id @default(cuid())
-  tokenHash String    @unique
-  userId    String
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
   expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
+  @@index([email])
   @@index([expiresAt])
 }
 

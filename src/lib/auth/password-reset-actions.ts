@@ -4,18 +4,19 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
-import {
-  generatePasswordResetSecret,
-  hashPasswordResetToken,
-} from "@/lib/auth/reset-token";
-import { findUserByEmail } from "@/lib/auth/users";
+import { generatePasswordResetToken } from "@/lib/auth/reset-token";
+import { findUserByEmail, normalizeEmail } from "@/lib/auth/users";
 import {
   buildPasswordResetUrl,
   sendPasswordResetEmail,
 } from "@/lib/email/resend-send";
+import { RESET_LINK_INVALID_MESSAGE } from "@/lib/auth/password-reset-constants";
 
 export type PasswordResetRequestState = { ok?: boolean; error?: string };
-export type PasswordResetCompleteState = { error?: string };
+export type PasswordResetCompleteState = {
+  error?: string;
+  invalidToken?: boolean;
+};
 
 /** Constant-time-ish work so missing accounts don’t return much faster than hits. */
 async function timingPadding(): Promise<void> {
@@ -38,11 +39,22 @@ export async function requestPasswordResetAction(
     return { ok: true, error: undefined };
   }
 
-  const { raw, hash } = generatePasswordResetSecret();
-  const resetUrl = buildPasswordResetUrl(raw);
+  const email = normalizeEmail(user.email);
+  const token = generatePasswordResetToken();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  const row = await prisma.$transaction(async (tx) => {
+    await tx.passwordResetToken.deleteMany({ where: { email } });
+    return tx.passwordResetToken.create({
+      data: { email, token, expiresAt },
+    });
+  });
+
+  const resetUrl = buildPasswordResetUrl(token);
   if (!resetUrl) {
+    await prisma.passwordResetToken.delete({ where: { id: row.id } }).catch(() => {});
     console.error(
-      "[password-reset] Missing APP_URL (or VERCEL_URL in production) — cannot build reset link",
+      "[password-reset] Missing NEXT_PUBLIC_APP_URL (or APP_URL / VERCEL_URL) — cannot build reset link",
     );
     return { ok: true, error: undefined };
   }
@@ -51,26 +63,10 @@ export async function requestPasswordResetAction(
     to: user.email,
     resetUrl,
   });
-  if (!send.ok) {
-    console.error("[password-reset] Email send failed:", send.error);
-    return { ok: true, error: undefined };
-  }
 
-  try {
-    await prisma.$transaction(async (tx) => {
-      await tx.passwordResetToken.deleteMany({
-        where: { userId: user.id, usedAt: null },
-      });
-      await tx.passwordResetToken.create({
-        data: {
-          tokenHash: hash,
-          userId: user.id,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-    });
-  } catch (e) {
-    console.error("[password-reset] Failed to persist token:", e);
+  if (!send.ok) {
+    await prisma.passwordResetToken.delete({ where: { id: row.id } }).catch(() => {});
+    console.error("[password-reset] Email send failed:", send.error);
     return { ok: true, error: undefined };
   }
 
@@ -86,7 +82,7 @@ export async function completePasswordResetAction(
   const confirm = String(formData.get("confirm") ?? "");
 
   if (!token) {
-    return { error: "Missing reset token." };
+    return { error: "Missing reset token.", invalidToken: true };
   }
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters" };
@@ -95,30 +91,31 @@ export async function completePasswordResetAction(
     return { error: "Passwords do not match" };
   }
 
-  const tokenHash = hashPasswordResetToken(token);
   const row = await prisma.passwordResetToken.findUnique({
-    where: { tokenHash },
+    where: { token },
   });
 
-  if (!row || row.usedAt !== null || row.expiresAt <= new Date()) {
-    return { error: "This reset link is invalid or has expired." };
+  if (!row || row.expiresAt <= new Date()) {
+    return { error: RESET_LINK_INVALID_MESSAGE, invalidToken: true };
+  }
+
+  const user = await findUserByEmail(row.email);
+  if (!user?.passwordHash) {
+    await prisma.passwordResetToken.deleteMany({ where: { email: row.email } });
+    return { error: RESET_LINK_INVALID_MESSAGE, invalidToken: true };
   }
 
   const passwordHash = await hashPassword(password);
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
-      where: { id: row.userId },
+      where: { id: user.id },
       data: { passwordHash },
     });
-    await tx.passwordResetToken.update({
-      where: { id: row.id },
-      data: { usedAt: new Date() },
-    });
     await tx.passwordResetToken.deleteMany({
-      where: { userId: row.userId, id: { not: row.id } },
+      where: { email: row.email },
     });
-    await tx.session.deleteMany({ where: { userId: row.userId } });
+    await tx.session.deleteMany({ where: { userId: user.id } });
   });
 
   redirect("/login?reset=1");

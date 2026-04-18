@@ -5,6 +5,10 @@
 type SendResult = { ok: true } | { ok: false; error: string };
 
 function getAppBaseUrl(): string | null {
+  const pub = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (pub) {
+    return pub.replace(/\/+$/, "");
+  }
   const explicit = process.env.APP_URL?.trim();
   if (explicit) {
     return explicit.replace(/\/+$/, "");

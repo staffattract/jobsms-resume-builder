@@ -1,13 +1,8 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 const TOKEN_BYTES = 32;
 
-export function generatePasswordResetSecret(): { raw: string; hash: string } {
-  const raw = randomBytes(TOKEN_BYTES).toString("base64url");
-  const hash = hashPasswordResetToken(raw);
-  return { raw, hash };
-}
-
-export function hashPasswordResetToken(raw: string): string {
-  return createHash("sha256").update(raw, "utf8").digest("hex");
+/** Cryptographically random URL-safe token (stored in DB; never log). */
+export function generatePasswordResetToken(): string {
+  return randomBytes(TOKEN_BYTES).toString("base64url");
 }

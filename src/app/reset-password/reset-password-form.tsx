@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import {
   completePasswordResetAction,
@@ -58,9 +59,21 @@ export function ResetPasswordForm({ token }: Props) {
           />
         </div>
         {state?.error ? (
-          <p className="mt-4 text-center text-sm font-medium text-red-400" role="alert">
-            {state.error}
-          </p>
+          <div className="mt-4 space-y-3 text-center">
+            <p className="text-sm font-medium text-red-400" role="alert">
+              {state.error}
+            </p>
+            {state.invalidToken ? (
+              <p className="text-sm text-zinc-500">
+                <Link
+                  href="/forgot-password"
+                  className="font-semibold text-zinc-300 underline-offset-4 transition hover:text-white hover:underline"
+                >
+                  Request a new reset link
+                </Link>
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <button type="submit" className={btnPrimary} disabled={pending}>
           {pending ? "Saving…" : "Update password"}
