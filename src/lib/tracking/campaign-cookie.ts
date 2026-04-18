@@ -9,7 +9,6 @@ export const CAMPAIGN_COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 function cookieOptions(request: NextRequest) {
   return {
     httpOnly: true,
-    /** `NODE_ENV` is unreliable on Edge; derive from the incoming request. */
     secure: request.nextUrl.protocol === "https:",
     sameSite: "lax" as const,
     path: "/",
@@ -18,48 +17,67 @@ function cookieOptions(request: NextRequest) {
 }
 
 /**
+ * Campaign cookie must never run on POST (Server Actions), /api, or auth pages —
+ * mutating those responses breaks submissions.
+ */
+export function shouldRunCampaignTracking(request: NextRequest): boolean {
+  if (request.method !== "GET") {
+    return false;
+  }
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/api")) {
+    return false;
+  }
+  if (
+    path === "/login" ||
+    path.startsWith("/login/") ||
+    path === "/register" ||
+    path.startsWith("/register/") ||
+    path === "/admin/login" ||
+    path.startsWith("/admin/login/") ||
+    path === "/forgot-password" ||
+    path.startsWith("/forgot-password/") ||
+    path === "/reset-password" ||
+    path.startsWith("/reset-password/")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * If the URL has `ad_id` and the cookie is not already set, persist it (first touch only).
- * Never throws — failures are logged and ignored so navigation is not broken.
+ * Call only for GET + `shouldRunCampaignTracking` === true. Never throws.
  */
 export function maybeSetCampaignAdIdCookie(
   request: NextRequest,
   response: NextResponse,
 ): void {
-  const hasAdParam = request.nextUrl.searchParams.has("ad_id");
-  if (!hasAdParam) {
+  if (!shouldRunCampaignTracking(request)) {
     return;
   }
 
-  const cookiePresent = Boolean(
-    request.cookies.get(CAMPAIGN_AD_ID_COOKIE)?.value,
-  );
-  console.log("[campaign-cookie] ad_id param seen", {
-    cookieAlreadyPresent: cookiePresent,
-  });
+  if (!request.nextUrl.searchParams.has("ad_id")) {
+    return;
+  }
 
-  if (cookiePresent) {
-    console.log("[campaign-cookie] skip (first-touch: keep existing cookie)");
+  if (request.cookies.get(CAMPAIGN_AD_ID_COOKIE)?.value) {
     return;
   }
 
   const raw = request.nextUrl.searchParams.get("ad_id")?.trim() ?? "";
   if (!raw || raw.length > 128) {
-    console.log("[campaign-cookie] ad_id invalid", { reason: "empty_or_long" });
     return;
   }
   if (!/^[a-zA-Z0-9_-]+$/.test(raw)) {
-    console.log("[campaign-cookie] ad_id invalid", { reason: "charset" });
     return;
   }
 
-  console.log("[campaign-cookie] ad_id valid", { length: raw.length });
-
   try {
     response.cookies.set(CAMPAIGN_AD_ID_COOKIE, raw, cookieOptions(request));
-    console.log("[campaign-cookie] cookie set ok");
   } catch (err) {
     console.error(
-      "[campaign-cookie] cookie set failed (ignored)",
+      "[campaign-cookie] set failed (ignored)",
       err instanceof Error ? err.message : String(err),
     );
   }

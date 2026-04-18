@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth/constants";
-import { maybeSetCampaignAdIdCookie } from "@/lib/tracking/campaign-cookie";
+import {
+  maybeSetCampaignAdIdCookie,
+  shouldRunCampaignTracking,
+} from "@/lib/tracking/campaign-cookie";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const path = request.nextUrl.pathname;
 
   const finish = (res: NextResponse) => {
-    try {
-      maybeSetCampaignAdIdCookie(request, res);
-    } catch (err) {
-      console.error(
-        "[middleware] campaign cookie hook failed (ignored)",
-        err instanceof Error ? err.message : String(err),
-      );
+    if (request.method === "GET" && shouldRunCampaignTracking(request)) {
+      try {
+        maybeSetCampaignAdIdCookie(request, res);
+      } catch (err) {
+        console.error(
+          "[middleware] campaign cookie failed (ignored)",
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
-    const isRedirect = res.status >= 300 && res.status < 400;
-    console.log("[middleware] finish", {
-      path,
-      response: isRedirect ? "redirect" : "next",
-    });
     return res;
   };
 
