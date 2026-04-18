@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
-import { getStripeWebhookSecret } from "@/lib/stripe/config";
 import { handleStripeWebhookEvent } from "@/lib/stripe/handle-webhook-event";
 
 export const runtime = "nodejs";
@@ -9,8 +8,18 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
-  const sig = request.headers.get("stripe-signature");
-  if (!sig) {
+  const signature = request.headers.get("stripe-signature");
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  console.log("[stripe-webhook] diagnostics", {
+    hasWebhookSecret: Boolean(webhookSecret),
+    webhookSecretLength: webhookSecret?.length ?? 0,
+    signatureHeaderPresent: Boolean(signature),
+    runtime: "nodejs",
+    rawBodyLength: rawBody.length,
+  });
+
+  if (!signature) {
     console.log("[stripe-webhook] signature_verified=false (missing header)");
     return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 });
   }
@@ -19,8 +28,8 @@ export async function POST(request: Request) {
   try {
     event = getStripe().webhooks.constructEvent(
       rawBody,
-      sig,
-      getStripeWebhookSecret(),
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET as string,
     );
   } catch {
     console.log("[stripe-webhook] signature_verified=false");
