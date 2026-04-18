@@ -31,6 +31,22 @@ model User {
   resumes Resume[]
   sessions Session[]
   analyticsEvents AnalyticsEvent[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+/// Single-use password reset secret (store hash only; raw token sent by email).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 /// Append-only product analytics (V1 internal funnel).

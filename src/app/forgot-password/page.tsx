@@ -1,29 +1,22 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SignInForm } from "./sign-in-form";
+import { ForgotPasswordForm } from "./forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Sign in — Resume builder",
-  description: "Sign in to edit and export your resumes.",
+  title: "Forgot password",
+  robots: { index: false, follow: false },
 };
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ reset?: string | string[] }>;
-}) {
-  const sp = await searchParams;
-  const showResetOk = sp.reset === "1" || sp.reset === "true";
-
+export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3 sm:px-6">
           <Link
-            href="/"
+            href="/login"
             className="text-sm font-semibold text-zinc-400 transition hover:text-white"
           >
-            ← Back
+            ← Sign in
           </Link>
           <Link
             href="/"
@@ -37,34 +30,25 @@ export default async function LoginPage({
       <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Sign in to continue
+            Reset your password
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Access your resumes, AI writing tools, and PDF downloads — all in one
-            place.
+            Enter the email for your account. We&apos;ll email you a one-time link
+            that expires in one hour.
           </p>
         </div>
-
-        {showResetOk ? (
-          <p
-            className="mx-auto mt-8 max-w-md rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-medium text-emerald-200 sm:mt-10"
-            role="status"
-          >
-            Password updated. Sign in with your new password.
-          </p>
-        ) : null}
 
         <div className="mt-8 sm:mt-10">
-          <SignInForm />
+          <ForgotPasswordForm />
         </div>
 
-        <p className="mt-6 text-center text-sm leading-relaxed text-zinc-400 sm:text-base">
-          New here?{" "}
+        <p className="mt-6 text-center text-sm text-zinc-500">
+          Wrong place?{" "}
           <Link
-            href="/register"
-            className="font-semibold text-zinc-200 underline decoration-zinc-500/80 underline-offset-4 transition hover:text-white hover:decoration-white"
+            href="/forgot-email"
+            className="font-medium text-zinc-400 underline-offset-4 transition hover:text-zinc-200 hover:underline"
           >
-            Create an account
+            Forgot which email you used?
           </Link>
         </p>
       </div>

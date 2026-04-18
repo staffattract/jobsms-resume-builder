@@ -1,29 +1,32 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SignInForm } from "./sign-in-form";
+import { ResetPasswordForm } from "./reset-password-form";
 
 export const metadata: Metadata = {
-  title: "Sign in — Resume builder",
-  description: "Sign in to edit and export your resumes.",
+  title: "Set new password",
+  robots: { index: false, follow: false },
 };
 
-export default async function LoginPage({
+type SearchParams = { token?: string | string[] };
+
+export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reset?: string | string[] }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
-  const showResetOk = sp.reset === "1" || sp.reset === "true";
+  const raw = sp.token;
+  const token = typeof raw === "string" ? raw.trim() : "";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3 sm:px-6">
           <Link
-            href="/"
+            href="/login"
             className="text-sm font-semibold text-zinc-400 transition hover:text-white"
           >
-            ← Back
+            ← Sign in
           </Link>
           <Link
             href="/"
@@ -37,36 +40,30 @@ export default async function LoginPage({
       <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Sign in to continue
+            Choose a new password
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Access your resumes, AI writing tools, and PDF downloads — all in one
-            place.
+            Use a strong password you haven&apos;t used elsewhere.
           </p>
         </div>
-
-        {showResetOk ? (
-          <p
-            className="mx-auto mt-8 max-w-md rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-medium text-emerald-200 sm:mt-10"
-            role="status"
-          >
-            Password updated. Sign in with your new password.
-          </p>
-        ) : null}
 
         <div className="mt-8 sm:mt-10">
-          <SignInForm />
+          {token ? (
+            <ResetPasswordForm token={token} />
+          ) : (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 text-center text-sm text-zinc-400 sm:p-8">
+              <p>This reset link is missing a token.</p>
+              <p className="mt-4">
+                <Link
+                  href="/forgot-password"
+                  className="font-semibold text-zinc-200 underline-offset-4 transition hover:text-white hover:underline"
+                >
+                  Request a new link
+                </Link>
+              </p>
+            </div>
+          )}
         </div>
-
-        <p className="mt-6 text-center text-sm leading-relaxed text-zinc-400 sm:text-base">
-          New here?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-zinc-200 underline decoration-zinc-500/80 underline-offset-4 transition hover:text-white hover:decoration-white"
-          >
-            Create an account
-          </Link>
-        </p>
       </div>
     </div>
   );

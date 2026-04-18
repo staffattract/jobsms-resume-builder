@@ -6,7 +6,18 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const path = request.nextUrl.pathname;
 
-  if (path === "/login" || path.startsWith("/login/") || path === "/register") {
+  if (path === "/reset-password") {
+    return NextResponse.next();
+  }
+
+  const publicAuthRecovery =
+    path === "/login" ||
+    path.startsWith("/login/") ||
+    path === "/register" ||
+    path === "/forgot-password" ||
+    path === "/forgot-email";
+
+  if (publicAuthRecovery) {
     if (token) {
       return NextResponse.redirect(new URL("/resumes", request.url));
     }
@@ -40,6 +51,9 @@ export const config = {
     "/resumes/:path*",
     "/login",
     "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/forgot-email",
     "/admin/:path*",
   ],
 };

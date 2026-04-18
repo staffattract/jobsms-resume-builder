@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, type AuthFormState } from "@/lib/auth/form-actions";
 
@@ -46,6 +47,14 @@ export function SignInForm() {
             className={inputClass}
             placeholder="••••••••"
           />
+          <div className="mt-2 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-zinc-400 transition hover:text-zinc-300 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         {state?.error ? (
           <p className="mt-4 text-center text-sm font-medium text-red-400" role="alert">
