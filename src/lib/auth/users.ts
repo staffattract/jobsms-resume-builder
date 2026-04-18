@@ -30,8 +30,10 @@ export async function createUserWithCredentials(input: {
   });
 }
 
+/** In `schema.prisma`, `User.email` is `@unique`. We use `findFirst` (not `findUnique`) so email
+ *  lookups still work if the deployed DB is missing that unique index (client/DB drift). */
 export async function findUserByEmail(email: string): Promise<User | null> {
-  return prisma.user.findUnique({
+  return prisma.user.findFirst({
     where: { email: normalizeEmail(email) },
   });
 }
