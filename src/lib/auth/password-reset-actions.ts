@@ -11,7 +11,11 @@ import {
 } from "@/lib/email/resend-send";
 import { RESET_LINK_INVALID_MESSAGE } from "@/lib/auth/password-reset-constants";
 
+/** `ok` = generic success (no enumeration). `error` = validation or generic system failure. */
 export type PasswordResetRequestState = { ok?: boolean; error?: string };
+
+const GENERIC_REQUEST_FAILURE =
+  "We couldn’t send a reset link right now. Please try again in a few minutes.";
 export type PasswordResetCompleteState = {
   error?: string;
   invalidToken?: boolean;
@@ -33,45 +37,61 @@ export async function requestPasswordResetAction(
     return { error: "Email is required" };
   }
 
-  await timingPadding();
+  try {
+    await timingPadding();
 
-  const user = await findUserByEmail(emailRaw);
-  if (!user?.passwordHash) {
-    return { ok: true, error: undefined };
-  }
+    const user = await findUserByEmail(emailRaw);
+    if (!user?.passwordHash) {
+      return { ok: true };
+    }
 
-  const email = normalizeEmail(user.email);
-  const token = generatePasswordResetToken();
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const email = normalizeEmail(user.email);
+    const token = generatePasswordResetToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-  const row = await prisma.$transaction(async (tx) => {
-    await tx.passwordResetToken.deleteMany({ where: { email } });
-    return tx.passwordResetToken.create({
-      data: { email, token, expiresAt },
+    let rowId: string | null = null;
+    try {
+      const row = await prisma.$transaction(async (tx) => {
+        await tx.passwordResetToken.deleteMany({ where: { email } });
+        return tx.passwordResetToken.create({
+          data: { email, token, expiresAt },
+        });
+      });
+      rowId = row.id;
+    } catch {
+      console.error("[password-reset] Token persist failed");
+      return { error: GENERIC_REQUEST_FAILURE };
+    }
+
+    const resetUrl = buildPasswordResetUrl(token);
+    if (!resetUrl) {
+      if (rowId) {
+        await prisma.passwordResetToken.delete({ where: { id: rowId } }).catch(() => {});
+      }
+      console.error(
+        "[password-reset] Missing NEXT_PUBLIC_APP_URL (or APP_URL / VERCEL_URL)",
+      );
+      return { ok: true };
+    }
+
+    const send = await sendPasswordResetEmail({
+      to: user.email,
+      resetUrl,
     });
-  });
 
-  const resetUrl = buildPasswordResetUrl(token);
-  if (!resetUrl) {
-    await prisma.passwordResetToken.delete({ where: { id: row.id } }).catch(() => {});
-    console.error(
-      "[password-reset] Missing NEXT_PUBLIC_APP_URL (or APP_URL / VERCEL_URL) — cannot build reset link",
-    );
-    return { ok: true, error: undefined };
+    if (!send.ok) {
+      if (rowId) {
+        await prisma.passwordResetToken.delete({ where: { id: rowId } }).catch(() => {});
+      }
+      console.error("[password-reset] Email send failed");
+      return { ok: true };
+    }
+
+    return { ok: true };
+  } catch {
+    console.error("[password-reset] Request failed");
+    return { error: GENERIC_REQUEST_FAILURE };
   }
-
-  const send = await sendPasswordResetEmail({
-    to: user.email,
-    resetUrl,
-  });
-
-  if (!send.ok) {
-    await prisma.passwordResetToken.delete({ where: { id: row.id } }).catch(() => {});
-    console.error("[password-reset] Email send failed:", send.error);
-    return { ok: true, error: undefined };
-  }
-
-  return { ok: true, error: undefined };
 }
 
 export async function completePasswordResetAction(
