@@ -8,7 +8,19 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   const finish = (res: NextResponse) => {
-    maybeSetCampaignAdIdCookie(request, res);
+    try {
+      maybeSetCampaignAdIdCookie(request, res);
+    } catch (err) {
+      console.error(
+        "[middleware] campaign cookie hook failed (ignored)",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+    const isRedirect = res.status >= 300 && res.status < 400;
+    console.log("[middleware] finish", {
+      path,
+      response: isRedirect ? "redirect" : "next",
+    });
     return res;
   };
 
@@ -59,6 +71,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
