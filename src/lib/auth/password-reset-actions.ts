@@ -32,6 +32,7 @@ export async function requestPasswordResetAction(
   _prev: PasswordResetRequestState,
   formData: FormData,
 ): Promise<PasswordResetRequestState> {
+  console.error("[password-reset] VERSION_MARKER=reset-v2-inline-findFirst");
   const emailRaw = String(formData.get("email") ?? "").trim();
   if (!emailRaw) {
     return { error: "Email is required" };
