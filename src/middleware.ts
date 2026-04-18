@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth/constants";
 
-// Campaign / ad_id cookie tracking temporarily disabled (was breaking page loads).
-// import {
-//   maybeSetCampaignAdIdCookie,
-//   shouldRunCampaignTracking,
-// } from "@/lib/tracking/campaign-cookie";
+// Campaign / ad_id cookie tracking disabled (was breaking page loads).
+// import { ... } from "@/lib/tracking/campaign-cookie";
 
+/**
+ * Server Actions POST to the same page URL. Auth redirects must run on GET only
+ * (e.g. “already logged in → /resumes”), otherwise POST can be intercepted and
+ * the action never runs → “page can’t load”.
+ */
 export function middleware(request: NextRequest) {
+  const method = request.method;
+  if (method !== "GET" && method !== "HEAD") {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const path = request.nextUrl.pathname;
 

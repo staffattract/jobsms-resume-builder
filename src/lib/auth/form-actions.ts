@@ -18,7 +18,6 @@ import {
   createUserWithCredentials,
   isUniqueConstraintError,
 } from "@/lib/auth/users";
-import { CAMPAIGN_AD_ID_COOKIE } from "@/lib/tracking/campaign-cookie";
 
 export type AuthFormState = { error?: string };
 
@@ -26,35 +25,42 @@ export async function registerAction(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  console.log("[auth:register] action start");
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const nameRaw = String(formData.get("name") ?? "").trim();
 
   if (!email || !password) {
+    console.log("[auth:register] validation fail", { reason: "missing_fields" });
     return { error: "Email and password are required" };
   }
   if (password.length < 8) {
+    console.log("[auth:register] validation fail", { reason: "password_short" });
     return { error: "Password must be at least 8 characters" };
   }
-
-  const jar = await cookies();
-  const campaignAdId = jar.get(CAMPAIGN_AD_ID_COOKIE)?.value?.trim() ?? null;
 
   try {
     const user = await createUserWithCredentials({
       email,
       password,
       name: nameRaw || undefined,
-      adId: campaignAdId,
     });
+    console.log("[auth:register] user created", { userId: user.id });
     const token = await createDbSession(user.id);
     await setAuthSessionCookie(token);
   } catch (e) {
     if (isUniqueConstraintError(e)) {
+      console.log("[auth:register] validation fail", { reason: "duplicate_email" });
       return { error: "An account with this email already exists" };
     }
-    throw e;
+    console.error(
+      "[auth:register] caught error",
+      e instanceof Error ? e.message : String(e),
+    );
+    return { error: "Something went wrong. Please try again." };
   }
+
+  console.log("[auth:register] redirect", { target: "/resumes" });
   redirect("/resumes");
 }
 
@@ -62,26 +68,41 @@ export async function loginAction(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  console.log("[auth:login] action start");
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
+    console.log("[auth:login] validation fail", { reason: "missing_fields" });
     return { error: "Email and password are required" };
   }
 
-  const user = await authenticateUserCredentials(email, password);
-  if (!user) {
-    return { error: "Invalid email or password" };
+  try {
+    const user = await authenticateUserCredentials(email, password);
+    if (!user) {
+      console.log("[auth:login] auth fail", { reason: "invalid_credentials" });
+      return { error: "Invalid email or password" };
+    }
+
+    console.log("[auth:login] auth success", { userId: user.id });
+
+    const store = await cookies();
+    const existing = store.get(AUTH_SESSION_COOKIE)?.value;
+    if (existing) {
+      await deleteSessionByToken(existing);
+    }
+
+    const token = await createDbSession(user.id);
+    await setAuthSessionCookie(token);
+  } catch (e) {
+    console.error(
+      "[auth:login] caught error",
+      e instanceof Error ? e.message : String(e),
+    );
+    return { error: "Something went wrong. Please try again." };
   }
 
-  const store = await cookies();
-  const existing = store.get(AUTH_SESSION_COOKIE)?.value;
-  if (existing) {
-    await deleteSessionByToken(existing);
-  }
-
-  const token = await createDbSession(user.id);
-  await setAuthSessionCookie(token);
+  console.log("[auth:login] redirect", { target: "/resumes" });
   redirect("/resumes");
 }
 
