@@ -1,31 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth/constants";
-import {
-  maybeSetCampaignAdIdCookie,
-  shouldRunCampaignTracking,
-} from "@/lib/tracking/campaign-cookie";
+
+// Campaign / ad_id cookie tracking temporarily disabled (was breaking page loads).
+// import {
+//   maybeSetCampaignAdIdCookie,
+//   shouldRunCampaignTracking,
+// } from "@/lib/tracking/campaign-cookie";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const path = request.nextUrl.pathname;
 
-  const finish = (res: NextResponse) => {
-    if (request.method === "GET" && shouldRunCampaignTracking(request)) {
-      try {
-        maybeSetCampaignAdIdCookie(request, res);
-      } catch (err) {
-        console.error(
-          "[middleware] campaign cookie failed (ignored)",
-          err instanceof Error ? err.message : String(err),
-        );
-      }
-    }
-    return res;
-  };
-
   if (path === "/reset-password") {
-    return finish(NextResponse.next());
+    return NextResponse.next();
   }
 
   const publicAuthRecovery =
@@ -37,36 +25,30 @@ export function middleware(request: NextRequest) {
 
   if (publicAuthRecovery) {
     if (token) {
-      return finish(
-        NextResponse.redirect(new URL("/resumes", request.url)),
-      );
+      return NextResponse.redirect(new URL("/resumes", request.url));
     }
-    return finish(NextResponse.next());
+    return NextResponse.next();
   }
 
   if (path === "/admin" || path.startsWith("/admin/login")) {
-    return finish(NextResponse.next());
+    return NextResponse.next();
   }
 
   if (path.startsWith("/admin/")) {
     if (!token) {
-      return finish(
-        NextResponse.redirect(new URL("/admin/login", request.url)),
-      );
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
-    return finish(NextResponse.next());
+    return NextResponse.next();
   }
 
   if (path.startsWith("/dashboard") || path.startsWith("/resumes")) {
     if (!token) {
-      return finish(
-        NextResponse.redirect(new URL("/login", request.url)),
-      );
+      return NextResponse.redirect(new URL("/login", request.url));
     }
-    return finish(NextResponse.next());
+    return NextResponse.next();
   }
 
-  return finish(NextResponse.next());
+  return NextResponse.next();
 }
 
 export const config = {
