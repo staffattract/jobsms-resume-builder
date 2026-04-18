@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AnalyticsDashboardView } from "@/components/admin/AnalyticsDashboardView";
+import { getAdCampaignRows } from "@/lib/analytics/campaign-dashboard";
 import { getAnalyticsCounts } from "@/lib/analytics/dashboard-data";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminAnalyticsAuthorized } from "@/lib/auth/admin-access";
@@ -12,7 +13,10 @@ export default async function AdminDashboardPage() {
     redirect("/admin/login");
   }
 
-  const counts = await getAnalyticsCounts();
+  const [counts, campaigns] = await Promise.all([
+    getAnalyticsCounts(),
+    getAdCampaignRows(),
+  ]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black font-sans text-zinc-100 antialiased">
@@ -50,7 +54,7 @@ export default async function AdminDashboardPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        <AnalyticsDashboardView counts={counts} />
+        <AnalyticsDashboardView counts={counts} campaigns={campaigns} />
       </main>
     </div>
   );

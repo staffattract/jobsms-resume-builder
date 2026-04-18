@@ -18,6 +18,7 @@ import {
   createUserWithCredentials,
   isUniqueConstraintError,
 } from "@/lib/auth/users";
+import { CAMPAIGN_AD_ID_COOKIE } from "@/lib/tracking/campaign-cookie";
 
 export type AuthFormState = { error?: string };
 
@@ -36,11 +37,15 @@ export async function registerAction(
     return { error: "Password must be at least 8 characters" };
   }
 
+  const jar = await cookies();
+  const campaignAdId = jar.get(CAMPAIGN_AD_ID_COOKIE)?.value?.trim() ?? null;
+
   try {
     const user = await createUserWithCredentials({
       email,
       password,
       name: nameRaw || undefined,
+      adId: campaignAdId,
     });
     const token = await createDbSession(user.id);
     await setAuthSessionCookie(token);

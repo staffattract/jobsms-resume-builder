@@ -15,6 +15,8 @@ model User {
   email        String   @unique
   passwordHash String?
   name         String?
+  /// First-touch campaign id from `?ad_id=` (set at registration).
+  adId         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

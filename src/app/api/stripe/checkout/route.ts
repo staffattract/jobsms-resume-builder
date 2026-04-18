@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { CAMPAIGN_AD_ID_COOKIE } from "@/lib/tracking/campaign-cookie";
 import {
   getAppBaseUrl,
   getStripePriceMonthlySubscription,
@@ -58,6 +60,19 @@ export async function POST(request: Request) {
   const base = getAppBaseUrl();
   const stripe = getStripe();
 
+  const jar = await cookies();
+  const cookieAdId = jar.get(CAMPAIGN_AD_ID_COOKIE)?.value?.trim();
+  const adIdRaw = (user.adId?.trim() || cookieAdId || "").slice(0, 500);
+  const adId =
+    adIdRaw && /^[a-zA-Z0-9_-]+$/.test(adIdRaw) && adIdRaw.length <= 128
+      ? adIdRaw
+      : undefined;
+
+  const baseMetadata: Record<string, string> = { appUserId: user.id };
+  if (adId) {
+    baseMetadata.ad_id = adId;
+  }
+
   const sessionPayload =
     parsed.data.kind === "subscription"
       ? {
@@ -66,8 +81,8 @@ export async function POST(request: Request) {
           success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${base}/billing/checkout-return?canceled=1`,
           client_reference_id: user.id,
-          metadata: { appUserId: user.id },
-          subscription_data: { metadata: { appUserId: user.id } },
+          metadata: { ...baseMetadata },
+          subscription_data: { metadata: { ...baseMetadata } },
           customer: user.stripeCustomerId ?? undefined,
           customer_email: user.stripeCustomerId ? undefined : user.email ?? undefined,
           allow_promotion_codes: false,
@@ -78,7 +93,7 @@ export async function POST(request: Request) {
           success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${base}/billing/checkout-return?canceled=1`,
           client_reference_id: user.id,
-          metadata: { appUserId: user.id },
+          metadata: { ...baseMetadata },
           customer: user.stripeCustomerId ?? undefined,
           customer_email: user.stripeCustomerId ? undefined : user.email ?? undefined,
           allow_promotion_codes: false,

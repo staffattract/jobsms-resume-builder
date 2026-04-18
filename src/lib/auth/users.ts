@@ -12,14 +12,20 @@ export async function createUserWithCredentials(input: {
   email: string;
   password: string;
   name?: string | null;
+  adId?: string | null;
 }): Promise<User> {
   const email = normalizeEmail(input.email);
   const passwordHash = await hashPassword(input.password);
+  const adId =
+    input.adId && /^[a-zA-Z0-9_-]+$/.test(input.adId) && input.adId.length <= 128
+      ? input.adId
+      : null;
   return prisma.user.create({
     data: {
       email,
       passwordHash,
       name: input.name?.length ? input.name : null,
+      adId,
     },
   });
 }
