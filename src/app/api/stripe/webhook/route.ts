@@ -5,11 +5,13 @@ import { getStripeWebhookSecret } from "@/lib/stripe/config";
 import { handleStripeWebhookEvent } from "@/lib/stripe/handle-webhook-event";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const rawBody = Buffer.from(await request.arrayBuffer());
+  const rawBody = await request.text();
   const sig = request.headers.get("stripe-signature");
   if (!sig) {
+    console.log("[stripe-webhook] signature_verified=false (missing header)");
     return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 });
   }
 
@@ -21,8 +23,13 @@ export async function POST(request: Request) {
       getStripeWebhookSecret(),
     );
   } catch {
+    console.log("[stripe-webhook] signature_verified=false");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  console.log("[stripe-webhook] signature_verified=true", {
+    eventType: event.type,
+  });
 
   try {
     await handleStripeWebhookEvent(event);
