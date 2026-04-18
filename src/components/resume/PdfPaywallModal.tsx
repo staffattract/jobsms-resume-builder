@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { btnSecondary } from "@/components/resume/form-classes";
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -93,111 +91,147 @@ export function PdfPaywallModal({ open, onClose }: Props) {
     return null;
   }
 
-  const benefits = [
-    "Print-ready PDF optimized for ATS and recruiters",
-    "Download again whenever you update your resume",
-    "Secure checkout powered by Stripe",
+  const valueBullets = [
+    "Clean, professional formatting",
+    "Optimized for recruiters & ATS",
+    "Ready to send immediately",
   ];
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pdf-paywall-title"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-200/90 bg-white p-6 shadow-2xl shadow-zinc-950/20 md:p-8 dark:border-zinc-700 dark:bg-zinc-950"
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950 p-6 shadow-2xl shadow-black/50 ring-1 ring-white/[0.06] md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
-            Professional export
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+            Unlock your PDF
           </p>
           <h2
             id="pdf-paywall-title"
-            className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-[1.65rem]"
+            className="mt-2 text-2xl font-bold tracking-tight text-white md:text-[1.65rem]"
           >
-            Unlock polished PDF downloads
+            Your resume is ready
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Keep building for free. When you’re ready to apply, export a crisp PDF
-            that matches what employers expect.
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
+            Download your polished, ATS-friendly resume in seconds
           </p>
         </div>
 
-        <ul className="mx-auto mt-8 max-w-lg space-y-3">
-          {benefits.map((line) => (
+        {/* Preview: finished document, partially obscured */}
+        <div
+          className="relative mx-auto mt-7 max-w-md overflow-hidden rounded-xl border border-zinc-700/90 bg-zinc-100 shadow-lg shadow-black/40"
+          aria-hidden
+        >
+          <div className="relative bg-gradient-to-b from-white to-zinc-100 px-5 pb-6 pt-5">
+            <div className="mx-auto h-2 w-2/5 rounded bg-zinc-300" />
+            <div className="mx-auto mt-3 h-1.5 w-3/5 rounded bg-zinc-200" />
+            <div className="mt-5 space-y-2">
+              <div className="h-1.5 w-full rounded bg-zinc-200" />
+              <div className="h-1.5 w-[92%] rounded bg-zinc-200" />
+              <div className="h-1.5 w-[88%] rounded bg-zinc-200" />
+            </div>
+            <div className="mt-4 space-y-1.5">
+              <div className="h-1 w-full rounded bg-zinc-200/90" />
+              <div className="h-1 w-full rounded bg-zinc-200/90" />
+              <div className="h-1 w-[95%] rounded bg-zinc-200/90" />
+              <div className="h-1 w-full rounded bg-zinc-200/90" />
+              <div className="h-1 w-[70%] rounded bg-zinc-200/90" />
+            </div>
+            <div className="mt-5 flex gap-2">
+              <div className="h-12 flex-1 rounded-lg bg-zinc-200/80" />
+              <div className="h-12 flex-1 rounded-lg bg-zinc-200/80" />
+            </div>
+          </div>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-25% via-zinc-950/50 to-zinc-950 backdrop-blur-[3px]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center border-t border-zinc-800/80 bg-zinc-950/85 px-4 py-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              Your resume · unlock to download
+            </span>
+          </div>
+        </div>
+
+        <ul className="mx-auto mt-6 max-w-lg space-y-2">
+          {valueBullets.map((line) => (
             <li
               key={line}
-              className="flex gap-3 rounded-xl border border-zinc-100 bg-zinc-50/80 px-4 py-3 text-left text-sm font-medium text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-200"
+              className="flex gap-2.5 rounded-lg border border-zinc-800/90 bg-zinc-900/60 px-3.5 py-2.5 text-left text-sm font-medium text-zinc-200"
             >
-              <CheckIcon className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <CheckIcon className="mt-0.5 shrink-0 text-emerald-500" />
               <span>{line}</span>
             </li>
           ))}
         </ul>
 
         {error ? (
-          <p className="mt-5 text-center text-sm font-medium text-red-600 dark:text-red-400">
+          <p className="mt-5 text-center text-sm font-medium text-red-400">
             {error}
           </p>
         ) : null}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-5">
-          <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-950">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              One-time PDF
-            </h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Single export — ideal for one application cycle or a final send.
-            </p>
-            <p className="mt-3 text-xs font-medium text-zinc-500 dark:text-zinc-500">
-              Price in secure checkout
+        <div className="mt-7 grid gap-4 md:grid-cols-2 md:gap-5">
+          <div className="flex flex-col rounded-2xl border border-zinc-700 bg-zinc-900/40 p-5">
+            <h3 className="text-sm font-semibold text-white">Download once</h3>
+            <p className="mt-1 text-2xl font-bold tracking-tight text-white">$4.99</p>
+            <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-500">
+              One polished PDF when you need it.
             </p>
             <button
               type="button"
-              className="mt-4 w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+              className="mt-4 w-full rounded-xl border border-zinc-600 bg-zinc-800 py-3.5 text-sm font-semibold text-white shadow-md transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-50"
               disabled={loadingKind !== null}
               onClick={() => void startCheckout("one_time")}
             >
-              {loadingKind === "one_time" ? "Redirecting…" : "Continue"}
+              {loadingKind === "one_time" ? "Redirecting…" : "Download PDF — $4.99"}
             </button>
           </div>
 
-          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-600/90 bg-gradient-to-b from-emerald-50/90 to-white p-5 shadow-lg shadow-emerald-950/10 ring-2 ring-emerald-600/20 dark:border-emerald-500 dark:from-emerald-950/50 dark:to-zinc-950 dark:ring-emerald-500/30">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
-              Best value
+          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500/85 bg-gradient-to-b from-emerald-950/55 to-zinc-900 p-5 shadow-xl shadow-emerald-950/25 ring-1 ring-emerald-500/20">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950 shadow-sm">
+              Best Value
             </span>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Monthly subscription
-            </h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-              Unlimited PDFs while subscribed — perfect while you iterate and
-              tailor for roles.
+            <h3 className="text-sm font-semibold text-white">Resume Pro</h3>
+            <p className="mt-1 text-2xl font-bold tracking-tight text-white">
+              $9.99
+              <span className="text-base font-semibold text-zinc-400">/month</span>
             </p>
-            <p className="mt-3 text-xs font-medium text-emerald-800/80 dark:text-emerald-300/90">
-              Price in secure checkout
+            <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400">
+              Unlimited PDFs while you&apos;re subscribed.
             </p>
             <button
               type="button"
-              className="mt-4 w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              className="mt-4 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50"
               disabled={loadingKind !== null}
               onClick={() => void startCheckout("subscription")}
             >
-              {loadingKind === "subscription" ? "Redirecting…" : "Continue"}
+              {loadingKind === "subscription"
+                ? "Redirecting…"
+                : "Go Pro — $9.99/month"}
             </button>
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-500">
-          Payments are processed securely by Stripe. No card details are stored on
-          our servers.
+        <p className="mt-5 text-center text-sm font-medium text-zinc-300">
+          Pay only when you download. No commitment.
+        </p>
+
+        <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-500">
+          Secure checkout powered by Stripe. Card details are not stored on our
+          servers.
         </p>
 
         <div className="mt-6 flex justify-center">
-          <button type="button" className={btnSecondary} onClick={onClose}>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-xl border border-zinc-600 bg-transparent px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-800/50 active:scale-[0.99]"
+            onClick={onClose}
+          >
             Not now
           </button>
         </div>
