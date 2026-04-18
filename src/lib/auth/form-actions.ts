@@ -10,6 +10,10 @@ import {
   clearAuthSessionCookie,
 } from "@/lib/auth/session";
 import {
+  getConfiguredAdminAnalyticsEmail,
+  isAdminAnalyticsAuthorized,
+} from "@/lib/auth/admin-access";
+import {
   authenticateUserCredentials,
   createUserWithCredentials,
   isUniqueConstraintError,
@@ -74,6 +78,51 @@ export async function loginAction(
   const token = await createDbSession(user.id);
   await setAuthSessionCookie(token);
   redirect("/resumes");
+}
+
+export async function adminLoginAction(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  if (!getConfiguredAdminAnalyticsEmail()) {
+    return { error: "Admin access is not configured (missing ADMIN_ANALYTICS_EMAIL)." };
+  }
+
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) {
+    return { error: "Email and password are required" };
+  }
+
+  const user = await authenticateUserCredentials(email, password);
+  if (!user) {
+    return { error: "Invalid email or password" };
+  }
+
+  if (!isAdminAnalyticsAuthorized(user.email)) {
+    return { error: "This account is not authorized for admin access." };
+  }
+
+  const store = await cookies();
+  const existing = store.get(AUTH_SESSION_COOKIE)?.value;
+  if (existing) {
+    await deleteSessionByToken(existing);
+  }
+
+  const token = await createDbSession(user.id);
+  await setAuthSessionCookie(token);
+  redirect("/admin/dashboard");
+}
+
+export async function adminLogoutAction(): Promise<void> {
+  const store = await cookies();
+  const token = store.get(AUTH_SESSION_COOKIE)?.value;
+  if (token) {
+    await deleteSessionByToken(token);
+  }
+  await clearAuthSessionCookie();
+  redirect("/admin/login");
 }
 
 export async function logoutAction(): Promise<void> {

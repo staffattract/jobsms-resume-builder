@@ -34,12 +34,6 @@ export default async function AppLayout({
               >
                 Resumes
               </Link>
-              <Link
-                href="/dashboard"
-                className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-              >
-                Dashboard
-              </Link>
             </nav>
           </div>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">

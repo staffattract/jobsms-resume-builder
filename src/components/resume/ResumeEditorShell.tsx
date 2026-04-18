@@ -22,6 +22,7 @@ import {
   btnPrimary,
   btnSecondary,
 } from "@/components/resume/form-classes";
+import { trackClientAnalyticsEvent } from "@/lib/analytics/track-client";
 import { TailorJobModal } from "@/components/resume/TailorJobModal";
 import { PdfPaywallModal } from "@/components/resume/PdfPaywallModal";
 import { ResumeLivePreview } from "@/components/resume/ResumeLivePreview";
@@ -428,7 +429,7 @@ export function ResumeEditorShell({
                 type="button"
                 className={btnSecondary}
                 onClick={() => {
-                  console.log("DOWNLOAD_PDF_CLICK");
+                  trackClientAnalyticsEvent("DOWNLOAD_PDF_CLICK");
                   void downloadPdf();
                 }}
                 disabled={pdfLoading || saveStatus === "saving"}

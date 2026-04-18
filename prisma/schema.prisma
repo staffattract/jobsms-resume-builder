@@ -30,6 +30,30 @@ model User {
 
   resumes Resume[]
   sessions Session[]
+  analyticsEvents AnalyticsEvent[]
+}
+
+/// Append-only product analytics (V1 internal funnel).
+model AnalyticsEvent {
+  id        String              @id @default(cuid())
+  type      AnalyticsEventType
+  userId    String?
+  metadata  Json                @default("{}")
+  createdAt DateTime            @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([createdAt])
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW_HOME
+  START_BUILDING_CLICK
+  SEE_PRICING_CLICK
+  DOWNLOAD_PDF_CLICK
+  PURCHASE_ONE_TIME_SUCCESS
+  PURCHASE_SUBSCRIPTION_SUCCESS
 }
 
 /// Prevents duplicate application of Stripe `checkout.session.completed` (e.g. credit double-grant).

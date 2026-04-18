@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { trackClientAnalyticsEvent } from "@/lib/analytics/track-client";
 
 type Props = {
   appHref: string;
@@ -14,14 +15,14 @@ export function HomeHeroCtas({ appHref, btnPrimary, btnSecondary }: Props) {
       <Link
         href={appHref}
         className={btnPrimary}
-        onClick={() => console.log("START_BUILDING_CLICK")}
+        onClick={() => trackClientAnalyticsEvent("START_BUILDING_CLICK")}
       >
         Start Building Your Resume
       </Link>
       <a
         href="#pricing"
         className={btnSecondary}
-        onClick={() => console.log("SEE_PRICING_CLICK")}
+        onClick={() => trackClientAnalyticsEvent("SEE_PRICING_CLICK")}
       >
         See Pricing
       </a>

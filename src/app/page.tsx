@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
 export const metadata: Metadata = {
@@ -30,6 +31,10 @@ function CheckRow({ children }: { children: ReactNode }) {
 
 export default async function Home() {
   const user = await getCurrentUser();
+  await recordAnalyticsEvent({
+    type: "PAGE_VIEW_HOME",
+    userId: user?.id ?? null,
+  });
   const appHref = user ? "/resumes" : "/register";
 
   return (

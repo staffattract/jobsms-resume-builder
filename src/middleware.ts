@@ -13,6 +13,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (path === "/admin" || path.startsWith("/admin/login")) {
+    return NextResponse.next();
+  }
+
+  if (path.startsWith("/admin/")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    return NextResponse.next();
+  }
+
   if (path.startsWith("/dashboard") || path.startsWith("/resumes")) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -24,5 +35,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/resumes/:path*", "/login", "/register"],
+  matcher: [
+    "/dashboard/:path*",
+    "/resumes/:path*",
+    "/login",
+    "/register",
+    "/admin/:path*",
+  ],
 };

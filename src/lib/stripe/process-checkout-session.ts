@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { prisma } from "@/lib/db";
 import {
   getStripePriceMonthlySubscription,
@@ -58,6 +59,10 @@ export async function applyCheckoutSessionCompleted(
         pdfOneTimeDownloadsRemaining: { increment: 1 },
       },
     });
+    await recordAnalyticsEvent({
+      type: "PURCHASE_ONE_TIME_SUCCESS",
+      userId,
+    });
     return;
   }
 
@@ -76,6 +81,10 @@ export async function applyCheckoutSessionCompleted(
         pdfEntitlementTier: "SUBSCRIPTION",
         subscriptionValidUntil: periodEnd,
       },
+    });
+    await recordAnalyticsEvent({
+      type: "PURCHASE_SUBSCRIPTION_SUCCESS",
+      userId,
     });
   }
 }
