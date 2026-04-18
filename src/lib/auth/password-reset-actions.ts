@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { generatePasswordResetToken } from "@/lib/auth/reset-token";
-import { findUserByEmail, normalizeEmail } from "@/lib/auth/users";
+import { normalizeEmail } from "@/lib/auth/users";
 import {
   buildPasswordResetUrl,
   sendPasswordResetEmail,
@@ -45,7 +45,10 @@ export async function requestPasswordResetAction(
     console.log("[password-reset] LOOKUP_START", {
       normalizedLen: normalizedEmail.length,
     });
-    const user = await findUserByEmail(normalizedEmail);
+    // Email-based user lookup: `findFirst` (not `findUnique` on `email`) — see `users.findUserByEmail`.
+    const user = await prisma.user.findFirst({
+      where: { email: normalizedEmail },
+    });
     if (!user?.passwordHash) {
       console.log("[password-reset] USER_SKIP", {
         reason: user ? "no_password_hash" : "no_user",
@@ -142,7 +145,9 @@ export async function completePasswordResetAction(
     return { error: RESET_LINK_INVALID_MESSAGE, invalidToken: true };
   }
 
-  const user = await findUserByEmail(row.email);
+  const user = await prisma.user.findFirst({
+    where: { email: normalizeEmail(row.email) },
+  });
   if (!user?.passwordHash) {
     await prisma.passwordResetToken.deleteMany({ where: { email: row.email } });
     return { error: RESET_LINK_INVALID_MESSAGE, invalidToken: true };
