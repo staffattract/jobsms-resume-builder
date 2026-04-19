@@ -7,5 +7,8 @@ export async function requireUser(): Promise<User> {
   if (!user) {
     redirect("/login");
   }
+  if (!user.emailVerifiedAt) {
+    redirect("/verify-email");
+  }
   return user;
 }

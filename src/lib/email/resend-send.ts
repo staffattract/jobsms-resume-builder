@@ -30,6 +30,16 @@ export function buildPasswordResetUrl(rawToken: string): string | null {
   return url.toString();
 }
 
+export function buildConfirmEmailUrl(rawToken: string): string | null {
+  const base = getAppBaseUrl();
+  if (!base) {
+    return null;
+  }
+  const url = new URL("/confirm-email", base);
+  url.searchParams.set("token", rawToken);
+  return url.toString();
+}
+
 export async function sendPasswordResetEmail(input: {
   to: string;
   resetUrl: string;
@@ -47,6 +57,53 @@ Open this link (valid for 1 hour):
 ${input.resetUrl}
 
 If you did not request this, you can ignore this email.`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [input.to],
+        subject,
+        text,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      return {
+        ok: false,
+        error: `Resend HTTP ${res.status}: ${body.slice(0, 200)}`,
+      };
+    }
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return { ok: false, error: msg };
+  }
+}
+
+export async function sendEmailVerificationEmail(input: {
+  to: string;
+  confirmUrl: string;
+}): Promise<SendResult> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!apiKey || !from) {
+    return { ok: false, error: "Missing RESEND_API_KEY or EMAIL_FROM" };
+  }
+
+  const subject = "Confirm your ResumeBlues account";
+  const text = `Thanks for signing up for ResumeBlues.
+
+Click the link below to confirm your email and activate your account.
+
+${input.confirmUrl}
+
+If you didn't create an account, you can ignore this email.`;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {

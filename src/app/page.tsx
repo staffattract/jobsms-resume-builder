@@ -36,7 +36,12 @@ export default async function Home() {
     type: "PAGE_VIEW_HOME",
     userId: user?.id ?? null,
   });
-  const appHref = user ? "/resumes" : "/register";
+  const appHref =
+    user && !user.emailVerifiedAt
+      ? "/verify-email"
+      : user
+        ? "/resumes"
+        : "/register";
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-100 antialiased">
@@ -48,10 +53,10 @@ export default async function Home() {
           <div className="flex items-center gap-4">
             {user ? (
               <Link
-                href="/resumes"
+                href={appHref}
                 className="text-sm font-semibold text-zinc-400 transition hover:text-white"
               >
-                My resumes
+                {user.emailVerifiedAt ? "My resumes" : "Verify email"}
               </Link>
             ) : (
               <>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppUserMenu } from "@/components/app/AppUserMenu";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireUser } from "@/lib/auth/require-user";
 import { logoutAction } from "@/lib/auth/form-actions";
 
 export default async function AppLayout({
@@ -9,10 +9,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireUser();
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-100/90 via-zinc-50/80 to-zinc-100/70 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-950">

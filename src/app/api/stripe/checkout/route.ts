@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireVerifiedSessionUser } from "@/lib/auth/api-auth";
 import { CAMPAIGN_AD_ID_COOKIE } from "@/lib/tracking/campaign-cookie";
 import {
   getAppBaseUrl,
@@ -27,9 +27,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireVerifiedSessionUser();
+  if (user instanceof NextResponse) {
+    return user;
   }
 
   let json: unknown;

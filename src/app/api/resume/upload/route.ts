@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireVerifiedSessionUser } from "@/lib/auth/api-auth";
 import { getAIProvider, improveUploadedResumeToContent } from "@/lib/ai/service";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
@@ -37,9 +37,9 @@ function titleFromContent(fullName?: string) {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireVerifiedSessionUser();
+  if (user instanceof NextResponse) {
+    return user;
   }
 
   let formData: FormData;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { ManageBillingButton } from "@/components/account/ManageBillingButton";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireUser } from "@/lib/auth/require-user";
 import { loadAccountBillingForUser } from "@/lib/account/load-account-billing";
 
 export const metadata: Metadata = {
@@ -28,10 +28,7 @@ function SectionCard({
 }
 
 export default async function AccountPage() {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireUser();
 
   const data = await loadAccountBillingForUser(user.id);
   if (!data) {

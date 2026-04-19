@@ -38,7 +38,11 @@ export function shouldRunCampaignTracking(request: NextRequest): boolean {
     path === "/forgot-password" ||
     path.startsWith("/forgot-password/") ||
     path === "/reset-password" ||
-    path.startsWith("/reset-password/")
+    path.startsWith("/reset-password/") ||
+    path === "/verify-email" ||
+    path.startsWith("/verify-email/") ||
+    path === "/confirm-email" ||
+    path.startsWith("/confirm-email/")
   ) {
     return false;
   }

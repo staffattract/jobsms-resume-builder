@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireVerifiedSessionUser } from "@/lib/auth/api-auth";
 import { prisma } from "@/lib/db";
 import { getAppBaseUrl } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/client";
@@ -8,9 +8,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireVerifiedSessionUser();
+  if (user instanceof NextResponse) {
+    return user;
   }
 
   const row = await prisma.user.findFirst({

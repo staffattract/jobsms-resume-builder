@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireVerifiedSessionUser } from "@/lib/auth/api-auth";
 import { prisma } from "@/lib/db";
 import { consumePdfEntitlementAfterSuccessfulDownload } from "@/lib/entitlements/entitlement-service";
 import { canUserDownloadPdf } from "@/lib/entitlements/resolve-pdf-access";
@@ -23,9 +23,9 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+  const user = await requireVerifiedSessionUser();
+  if (user instanceof NextResponse) {
+    return user;
   }
 
   const { id } = await context.params;

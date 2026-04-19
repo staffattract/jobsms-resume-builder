@@ -13,6 +13,7 @@ import {
   getConfiguredAdminAnalyticsEmail,
   isAdminAnalyticsAuthorized,
 } from "@/lib/auth/admin-access";
+import { sendVerificationEmailForUserEmail } from "@/lib/auth/email-verification-actions";
 import {
   authenticateUserCredentials,
   createUserWithCredentials,
@@ -46,6 +47,12 @@ export async function registerAction(
       name: nameRaw || undefined,
     });
     console.log("[auth:register] user created", { userId: user.id });
+
+    const emailSend = await sendVerificationEmailForUserEmail(user.email);
+    if (!emailSend.ok) {
+      console.error("[auth:register] verification email failed", emailSend.error);
+    }
+
     const token = await createDbSession(user.id);
     await setAuthSessionCookie(token);
   } catch (e) {
@@ -60,8 +67,8 @@ export async function registerAction(
     return { error: "Something went wrong. Please try again." };
   }
 
-  console.log("[auth:register] redirect", { target: "/resumes" });
-  redirect("/resumes");
+  console.log("[auth:register] redirect", { target: "/verify-email" });
+  redirect("/verify-email");
 }
 
 export async function loginAction(
