@@ -45,3 +45,29 @@ Do not invent employers, titles, or credentials not supported by the resume JSON
 
 export const ASSISTANT_STYLE =
   "You are a concise resume-writing assistant. Follow instructions exactly.";
+
+/** Turn plain resume text into structured JSON matching the app resume schema. */
+export function uploadResumeImproveUserPrompt(rawResumeText: string): string {
+  return `You receive plain text extracted from a user's resume (PDF or Word). Produce an improved version as structured data.
+
+Source text (may be noisy or mis-ordered):
+${rawResumeText}
+
+Return ONLY valid JSON (no markdown code fences). The JSON must match this shape and key names exactly:
+{
+  "contact": { "fullName"?: string, "email"?: string, "phone"?: string, "location"?: string, "links": [{ "id": string, "label"?: string, "url"?: string }] },
+  "target": { "jobTitle"?: string, "company"?: string, "notes"?: string },
+  "summary": { "text": string },
+  "experience": { "items": [{ "id": string, "employer": string, "title": string, "location"?: string, "startDate"?: string, "endDate"?: string | null, "bullets": [{ "id": string, "text": string }] }] },
+  "skills": { "groups": [{ "id": string, "name": string, "items": string[] }] },
+  "education": { "items": [{ "id": string, "institution": string, "degree"?: string, "field"?: string, "startDate"?: string, "endDate"?: string, "details"?: string }] },
+  "meta": { "lastStepIndex": number, "templateId": string }
+}
+
+Rules:
+- Improve bullet wording (clear, achievement-oriented); tighten phrasing; fix obvious typos.
+- Keep employers, titles, institutions, degrees, and dates truthful to the source — do not invent jobs, companies, schools, or metrics.
+- If the source omits data, use empty strings or empty arrays; "meta.lastStepIndex" should be 0 and "meta.templateId" should be "classic".
+- "summary.text": 2–4 professional sentences derived only from the provided facts.
+- Every "id" in arrays must be a unique non-empty string (any stable string is fine).`;
+}

@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     "puppeteer",
     "puppeteer-core",
     "@sparticuz/chromium",
+    "pdf-parse",
+    "mammoth",
     "pg",
     "@prisma/adapter-pg",
   ],
@@ -22,6 +24,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/resume/\\[id\\]/pdf": [
       "node_modules/@sparticuz/chromium/**/*",
+    ],
+    "/api/resume/upload": [
+      "node_modules/pdf-parse/**/*",
+      "node_modules/mammoth/**/*",
     ],
   },
 };

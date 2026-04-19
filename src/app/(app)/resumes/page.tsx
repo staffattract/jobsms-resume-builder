@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ResumeRelativeUpdated } from "@/components/resumes/ResumeRelativeUpdated";
+import { UploadResumeButton } from "@/components/resumes/UploadResumeButton";
 import { listResumesForCurrentUser } from "@/lib/resume/queries";
 import { createResume } from "@/lib/resume/actions";
 
@@ -32,25 +33,28 @@ export default async function ResumesPage() {
             ready to apply.
           </p>
         </div>
-        <form action={createResume}>
-          <button
-            type="submit"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-zinc-900/15 transition hover:bg-zinc-800 active:scale-[0.99] dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none dark:hover:bg-white sm:w-auto"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              aria-hidden
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-start">
+          <form action={createResume} className="w-full sm:w-auto">
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-zinc-900/15 transition hover:bg-zinc-800 active:scale-[0.99] dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none dark:hover:bg-white sm:w-auto"
             >
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
-            New resume
-          </button>
-        </form>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                aria-hidden
+              >
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+              New resume
+            </button>
+          </form>
+          <UploadResumeButton />
+        </div>
       </header>
 
       {resumes.length === 0 ? (
@@ -81,14 +85,19 @@ export default async function ResumesPage() {
             Start with a blank document and build step by step — contact info,
             experience, and a summary that fits your next role.
           </p>
-          <form action={createResume} className="mt-8">
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-            >
-              Create your first resume
-            </button>
-          </form>
+          <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+            <form action={createResume} className="sm:flex-1">
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+              >
+                Create your first resume
+              </button>
+            </form>
+            <div className="sm:flex-1">
+              <UploadResumeButton />
+            </div>
+          </div>
         </div>
       ) : (
         <ul className="mt-8 space-y-3">

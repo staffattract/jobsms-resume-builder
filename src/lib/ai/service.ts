@@ -5,15 +5,22 @@ import {
   generateSummaryUserPrompt,
   improveBulletUserPrompt,
   tailorToJobUserPrompt,
+  uploadResumeImproveUserPrompt,
 } from "@/lib/ai/prompts";
 import {
   MAX_BULLET_CHARS,
   MAX_JOB_DESCRIPTION_CHARS,
   MAX_RESUME_JSON_CHARS,
+  MAX_UPLOAD_RESUME_TEXT,
   truncate,
 } from "@/lib/ai/limits";
 import { parseTailorJson } from "@/lib/ai/json-parse";
-import type { ResumeContent } from "@/lib/resume/types";
+import { parseUploadResumeJson } from "@/lib/ai/parse-upload-resume-json";
+import { ensureAllResumeIds } from "@/lib/resume/ensure-resume-ids";
+import {
+  normalizeResumeContent,
+  type ResumeContent,
+} from "@/lib/resume/types";
 
 let cachedProvider: AIProvider | null = null;
 
@@ -100,4 +107,27 @@ export async function tailorToJob(
     summary,
     ...(alignmentNotes !== undefined ? { alignmentNotes } : {}),
   };
+}
+
+export async function improveUploadedResumeToContent(
+  provider: AIProvider,
+  rawText: string,
+): Promise<ResumeContent> {
+  const clipped = truncate(rawText.trim(), MAX_UPLOAD_RESUME_TEXT);
+  if (!clipped.trim()) {
+    throw new Error("No text extracted from file");
+  }
+  const raw = await run(
+    provider,
+    uploadResumeImproveUserPrompt(clipped),
+    0.35,
+  );
+  let parsed: unknown;
+  try {
+    parsed = parseUploadResumeJson(raw);
+  } catch {
+    throw new Error("Could not parse AI response as resume JSON");
+  }
+  const normalized = normalizeResumeContent(parsed);
+  return ensureAllResumeIds(normalized);
 }
