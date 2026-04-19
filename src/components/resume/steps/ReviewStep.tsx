@@ -2,10 +2,14 @@
 
 import type { ReactNode } from "react";
 import type { ResumeContent } from "@/lib/resume/types";
+import { btnPrimary } from "@/components/resume/form-classes";
 
 type Props = {
   content: ResumeContent;
   title: string;
+  onDownloadNow: () => void;
+  downloadDisabled?: boolean;
+  downloadBusy?: boolean;
 };
 
 function CheckRow({ ok, children }: { ok: boolean; children: ReactNode }) {
@@ -34,7 +38,13 @@ function CheckRow({ ok, children }: { ok: boolean; children: ReactNode }) {
   );
 }
 
-export function ReviewStep({ content, title }: Props) {
+export function ReviewStep({
+  content,
+  title,
+  onDownloadNow,
+  downloadDisabled,
+  downloadBusy,
+}: Props) {
   const { contact, target, summary, experience, skills, education } = content;
 
   const hasName = !!contact.fullName?.trim();
@@ -86,6 +96,23 @@ export function ReviewStep({ content, title }: Props) {
         Need changes? Jump back to any step from the progress rail — your preview
         updates instantly.
       </p>
+
+      <div className="border-t border-zinc-200/90 pt-8 dark:border-zinc-800">
+        <p className="mb-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          Ready to export?
+        </p>
+        <button
+          type="button"
+          className={`${btnPrimary} w-full px-6 py-3.5 text-base shadow-md sm:w-auto sm:min-w-[14rem]`}
+          onClick={onDownloadNow}
+          disabled={downloadDisabled}
+        >
+          {downloadBusy ? "Preparing…" : "Download Now"}
+        </button>
+        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+          Same secure download as &quot;Download PDF&quot; in the header — includes plan check.
+        </p>
+      </div>
     </div>
   );
 }

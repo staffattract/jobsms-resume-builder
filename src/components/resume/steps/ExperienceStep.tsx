@@ -7,6 +7,7 @@ import { AiSuggestionInline } from "@/components/resume/AiSuggestionInline";
 import {
   btnDanger,
   btnSecondary,
+  experienceBulletTextareaClass,
   fieldsetClass,
   inputClass,
   labelClass,
@@ -86,6 +87,14 @@ export function ExperienceStep({ resumeId, value, onChange }: Props) {
                 placeholder="City, State / Remote"
               />
             </div>
+            <div className="sm:col-span-2">
+              <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-500">
+                Use <span className="font-medium text-zinc-600 dark:text-zinc-400">YYYY-MM</span>{" "}
+                (e.g. <span className="font-mono">2024-01</span>) — preview and PDF show month and
+                year (e.g. Jan 2024). You can also type a label like{" "}
+                <span className="italic">August 2023</span>.
+              </p>
+            </div>
             <div>
               <label className={labelClass}>Start date</label>
               <input
@@ -94,7 +103,8 @@ export function ExperienceStep({ resumeId, value, onChange }: Props) {
                 onChange={(e) =>
                   updateItem(job.id, { startDate: e.target.value })
                 }
-                placeholder="YYYY-MM"
+                placeholder="2024-01 or August 2023"
+                autoComplete="off"
               />
             </div>
             <div>
@@ -107,7 +117,8 @@ export function ExperienceStep({ resumeId, value, onChange }: Props) {
                     endDate: e.target.value === "" ? null : e.target.value,
                   })
                 }
-                placeholder="YYYY-MM or leave empty if current"
+                placeholder="2023-06 — leave empty if current"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -121,14 +132,15 @@ export function ExperienceStep({ resumeId, value, onChange }: Props) {
                 <li key={b.id} className="flex flex-col gap-1">
                   <div className="flex gap-2">
                     <span
-                      className="mt-2 shrink-0 text-zinc-400"
+                      className="mt-3 shrink-0 text-zinc-400"
                       aria-hidden
                     >
                       •
                     </span>
-                    <input
-                      className={`${inputClass} max-w-none flex-1`}
+                    <textarea
+                      className={`${experienceBulletTextareaClass} flex-1`}
                       value={b.text}
+                      rows={4}
                       onChange={(e) =>
                         updateBullet(job.id, b.id, e.target.value)
                       }

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { GalleryPreviewChrome } from "@/lib/resume/templates/preview-gallery-styles";
 import { galleryPreviewChrome } from "@/lib/resume/templates/preview-gallery-styles";
 import { getResumeTemplateDefinition } from "@/lib/resume/templates/registry";
+import { formatResumeDateRange } from "@/lib/resume/format-resume-dates";
 import type { ResumeContent } from "@/lib/resume/types";
 
 export type PreviewExportAccess = "allowed" | "pending" | "denied";
@@ -17,15 +18,6 @@ type Props = {
   /** Gallery mini-previews: stronger per-template silhouette (editor uses default). */
   previewMode?: "default" | "gallery";
 };
-
-function formatJobDates(start?: string, end?: string | null) {
-  const left = start?.trim() || "—";
-  if (end === null) {
-    return `${left} – Present`;
-  }
-  const right = end?.trim() || "—";
-  return `${left} – ${right}`;
-}
 
 const SECTION_TITLE_DEFAULT =
   "mb-3 border-b border-zinc-200 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:border-zinc-700 dark:text-zinc-500";
@@ -221,7 +213,7 @@ export function ResumeLivePreview({
                                 ) : null}
                               </div>
                               <p className="shrink-0 text-[0.7rem] font-medium tabular-nums text-zinc-500">
-                                {formatJobDates(job.startDate, job.endDate)}
+                                {formatResumeDateRange(job.startDate, job.endDate)}
                               </p>
                             </div>
                             {job.bullets.length > 0 ? (
@@ -283,7 +275,7 @@ export function ResumeLivePreview({
                             </p>
                             {(ed.startDate || ed.endDate) ? (
                               <p className="mt-0.5 text-[0.75rem] text-zinc-500">
-                                {formatJobDates(ed.startDate, ed.endDate ?? undefined)}
+                                {formatResumeDateRange(ed.startDate, ed.endDate ?? undefined)}
                               </p>
                             ) : null}
                             {ed.details?.trim() ? (
@@ -353,7 +345,7 @@ export function ResumeLivePreview({
                               ) : null}
                             </div>
                             <p className="shrink-0 text-[0.7rem] font-medium tabular-nums text-zinc-500">
-                              {formatJobDates(job.startDate, job.endDate)}
+                              {formatResumeDateRange(job.startDate, job.endDate)}
                             </p>
                           </div>
                           {job.bullets.length > 0 ? (
@@ -409,7 +401,7 @@ export function ResumeLivePreview({
                           </p>
                           {(ed.startDate || ed.endDate) ? (
                             <p className="mt-0.5 text-[0.75rem] text-zinc-500">
-                              {formatJobDates(ed.startDate, ed.endDate ?? undefined)}
+                              {formatResumeDateRange(ed.startDate, ed.endDate ?? undefined)}
                             </p>
                           ) : null}
                           {ed.details?.trim() ? (

@@ -5,6 +5,9 @@ export const inputClass =
   "mt-1.5 block w-full max-w-xl rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:ring-white/10";
 export const textareaClass =
   "mt-1.5 block w-full max-w-2xl rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 shadow-sm transition placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:ring-white/10";
+/** Work experience bullets: taller default area for long achievement lines (no label above). */
+export const experienceBulletTextareaClass =
+  "mt-0 block w-full max-w-none rounded-xl border border-zinc-200 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-900 shadow-sm transition placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:ring-white/10 min-h-[7.5rem] resize-y sm:min-h-[8.5rem]";
 export const fieldsetClass =
   "rounded-2xl border border-zinc-200/90 bg-zinc-50/80 p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/40";
 export const btnPrimary =

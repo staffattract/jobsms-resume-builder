@@ -1,3 +1,4 @@
+import { formatResumeDateRange } from "@/lib/resume/format-resume-dates";
 import type { ResumeContent } from "@/lib/resume/types";
 import { coerceResumeTemplateId } from "@/lib/resume/templates/registry";
 import {
@@ -11,21 +12,6 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function formatRange(
-  start?: string,
-  end?: string | null,
-): string {
-  const a = (start ?? "").trim();
-  const b =
-    end === null || end === undefined
-      ? "Present"
-      : String(end).trim() || "—";
-  if (!a && !b) {
-    return "";
-  }
-  return `${a || "—"} – ${b}`;
 }
 
 export function buildResumePdfHtml(title: string, content: ResumeContent): string {
@@ -73,7 +59,7 @@ export function buildResumePdfHtml(title: string, content: ResumeContent): strin
             const loc = job.location?.trim()
               ? `<div class="muted">${escapeHtml(job.location)}</div>`
               : "";
-            const dates = formatRange(job.startDate, job.endDate);
+            const dates = formatResumeDateRange(job.startDate, job.endDate);
             const datesHtml = dates
               ? `<div class="muted small">${escapeHtml(dates)}</div>`
               : "";
@@ -114,7 +100,10 @@ export function buildResumePdfHtml(title: string, content: ResumeContent): strin
               .filter(Boolean)
               .map((t) => escapeHtml(t!))
               .join(", ");
-            const dates = formatRange(ed.startDate, ed.endDate ?? undefined);
+            const dates = formatResumeDateRange(
+              ed.startDate,
+              ed.endDate ?? undefined,
+            );
             const details = ed.details?.trim()
               ? `<p class="body small">${escapeHtml(ed.details.trim()).replace(/\n/g, "<br/>")}</p>`
               : "";

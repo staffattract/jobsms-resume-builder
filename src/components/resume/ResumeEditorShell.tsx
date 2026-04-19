@@ -110,6 +110,7 @@ export function ResumeEditorShell({
   const [pdfErrorMessage, setPdfErrorMessage] = useState<string | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [canDownloadPdf, setCanDownloadPdf] = useState<boolean | null>(null);
+  const [advancingStep, setAdvancingStep] = useState(false);
 
   const lastSavedSnapshot = useRef(snapshot(initialTitle, initialContent));
   const saveGeneration = useRef(0);
@@ -146,7 +147,7 @@ export function ResumeEditorShell({
     [stepIndex],
   );
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(async (): Promise<boolean> => {
     const step = Math.min(Math.max(stepIndex, 0), STEP_LABELS.length - 1);
     const payload = {
       title,
@@ -162,7 +163,7 @@ export function ResumeEditorShell({
       await updateResumeTitle(resumeId, payload.title);
       await updateResumeContent(resumeId, payload.content);
       if (gen !== saveGeneration.current) {
-        return;
+        return false;
       }
       lastSavedSnapshot.current = snapshot(payload.title, payload.content);
       setSaveStatus("saved");
@@ -173,23 +174,25 @@ export function ResumeEditorShell({
         setSaveStatus("idle");
         savedClearTimer.current = null;
       }, SAVED_MSG_MS);
+      return true;
     } catch {
       if (gen !== saveGeneration.current) {
-        return;
+        return false;
       }
       setSaveStatus("error");
       setErrorMessage("Could not save. Check your connection and try again.");
+      return false;
     }
   }, [resumeId, title, content, stepIndex]);
 
-  function goToStep(i: number) {
+  const goToStep = useCallback((i: number) => {
     const next = Math.min(Math.max(i, 0), STEP_LABELS.length - 1);
     setStepIndex(next);
     setContent((c) => ({
       ...c,
       meta: { ...c.meta, lastStepIndex: next },
     }));
-  }
+  }, []);
 
   useEffect(() => {
     const currentSnap = snapshot(title, content);
@@ -231,8 +234,8 @@ export function ResumeEditorShell({
         return;
       }
       if (snapshot(title, content) !== lastSavedSnapshot.current) {
-        await persist();
-        if (snapshot(title, content) !== lastSavedSnapshot.current) {
+        const saved = await persist();
+        if (!saved || snapshot(title, content) !== lastSavedSnapshot.current) {
           return;
         }
       }
@@ -326,6 +329,24 @@ export function ResumeEditorShell({
       : canDownloadPdf === false
         ? "denied"
         : "pending";
+
+  const handleNextStep = useCallback(async () => {
+    if (clampedStep >= STEP_LABELS.length - 1) {
+      return;
+    }
+    setAdvancingStep(true);
+    try {
+      const ok = await persist();
+      if (!ok) {
+        return;
+      }
+      goToStep(clampedStep + 1);
+    } finally {
+      setAdvancingStep(false);
+    }
+  }, [clampedStep, persist, goToStep]);
+
+  const stepNavDisabled = advancingStep || saveStatus === "saving";
 
   const previewBlock = (
     <div className="flex min-h-0 flex-col">
@@ -538,13 +559,72 @@ export function ResumeEditorShell({
             </nav>
 
             <section className="min-w-0 flex-1 rounded-2xl border border-zinc-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 md:p-8">
-              <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-100 pb-4 dark:border-zinc-800">
-                <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  {STEP_LABELS[clampedStep]}
-                </h2>
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                  Step {clampedStep + 1} of {STEP_LABELS.length}
-                </span>
+              <div className="mb-5 space-y-4 border-b border-zinc-100 pb-5 dark:border-zinc-800">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    {STEP_LABELS[clampedStep]}
+                  </h2>
+                  <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                    Step {clampedStep + 1} of {STEP_LABELS.length}
+                  </span>
+                </div>
+                <nav
+                  className="flex flex-wrap items-stretch justify-between gap-2 sm:items-center"
+                  aria-label="Step navigation"
+                >
+                  <button
+                    type="button"
+                    className={`${btnSecondary} inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 sm:flex-initial sm:justify-start`}
+                    onClick={() => goToStep(clampedStep - 1)}
+                    disabled={clampedStep === 0 || stepNavDisabled}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="shrink-0 opacity-80"
+                      aria-hidden
+                    >
+                      <path
+                        d="M15 18l-6-6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className={`${btnSecondary} inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 sm:flex-initial sm:justify-end`}
+                    onClick={() => {
+                      void handleNextStep();
+                    }}
+                    disabled={
+                      clampedStep >= STEP_LABELS.length - 1 || stepNavDisabled
+                    }
+                  >
+                    {advancingStep ? "Saving…" : "Next"}
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="shrink-0 opacity-80"
+                      aria-hidden
+                    >
+                      <path
+                        d="M9 18l6-6-6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </nav>
               </div>
 
               {clampedStep === 0 && (
@@ -595,7 +675,16 @@ export function ResumeEditorShell({
                 />
               )}
               {clampedStep === 6 && (
-                <ReviewStep content={content} title={title} />
+                <ReviewStep
+                  content={content}
+                  title={title}
+                  onDownloadNow={() => {
+                    trackClientAnalyticsEvent("DOWNLOAD_PDF_CLICK");
+                    void downloadPdf();
+                  }}
+                  downloadDisabled={pdfLoading || saveStatus === "saving"}
+                  downloadBusy={pdfLoading}
+                />
               )}
             </section>
           </div>
