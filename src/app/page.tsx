@@ -269,22 +269,16 @@ export default async function Home() {
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-center text-sm font-medium leading-relaxed text-zinc-300 sm:text-base">
-              Start Creating Your Resume with a Free Account. No CC Required to Sign Up.
-            </p>
             <div className="mx-auto mt-8 max-w-lg">
               <div className="relative rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-b from-emerald-950/50 to-zinc-900 p-6 text-center shadow-xl shadow-emerald-950/20 sm:p-8">
                 <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950">
                   Resume Pro
                 </span>
-                <h3 className="mt-3 text-lg font-semibold text-white sm:text-xl">
-                  When you&apos;re ready to export
-                </h3>
-                <p className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                  $1<span className="text-xl font-semibold text-zinc-400 sm:text-2xl"> today</span>
+                <p className="mx-auto mt-3 max-w-sm text-sm font-medium leading-relaxed text-zinc-300 sm:text-base">
+                  Start Creating Your Resume with a Free Account. No CC Required to Sign Up.
                 </p>
-                <p className="mx-auto mt-2 max-w-sm text-sm font-medium leading-relaxed text-zinc-300">
-                  Then $9.99/month after 10 days. Cancel anytime.
+                <p className="mt-5 text-3xl font-bold tracking-tight text-white sm:mt-6 sm:text-4xl">
+                  $1<span className="text-xl font-semibold text-zinc-400 sm:text-2xl"> today</span>
                 </p>
                 <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left text-sm text-zinc-300">
                   <li className="flex gap-2">
