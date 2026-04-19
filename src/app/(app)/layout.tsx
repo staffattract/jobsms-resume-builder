@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AppUserMenu } from "@/components/app/AppUserMenu";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { logoutAction } from "@/lib/auth/form-actions";
 
@@ -34,29 +35,10 @@ export default async function AppLayout({
               >
                 Resumes
               </Link>
-              <Link
-                href="/account"
-                className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-              >
-                My account
-              </Link>
             </nav>
           </div>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <span
-              className="min-w-0 max-w-[min(100%,220px)] truncate text-xs text-zinc-500 sm:text-sm dark:text-zinc-400"
-              title={user.email ?? undefined}
-            >
-              {user.email}
-            </span>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
-              >
-                Log out
-              </button>
-            </form>
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-3 sm:gap-4">
+            <AppUserMenu email={user.email} logoutAction={logoutAction} />
           </div>
         </div>
       </header>
