@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
-import {
-  confirmEmailAction,
-  type EmailVerificationConfirmState,
-} from "@/lib/auth/email-verification-actions";
+import { confirmEmailAction } from "@/lib/auth/email-verification-actions";
+import type { EmailVerificationConfirmState } from "@/lib/auth/email-verification-types";
 
 const btnPrimary =
   "mt-6 w-full rounded-xl bg-white py-3.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-black/25 transition hover:bg-zinc-200 disabled:opacity-50";

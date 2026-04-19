@@ -8,18 +8,13 @@ import {
 import { generatePasswordResetToken } from "@/lib/auth/reset-token";
 import { findUserByEmail, normalizeEmail } from "@/lib/auth/users";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import type {
+  EmailVerificationConfirmState,
+  ResendVerificationState,
+} from "@/lib/auth/email-verification-types";
 
-export const VERIFY_LINK_INVALID_MESSAGE =
+const VERIFY_LINK_INVALID_MESSAGE =
   "This confirmation link is invalid or has expired.";
-
-export type EmailVerificationConfirmState = {
-  error?: string;
-  invalidToken?: boolean;
-  succeeded?: boolean;
-  alreadyVerified?: boolean;
-};
-
-export type ResendVerificationState = { ok?: boolean; error?: string };
 
 /** Creates a fresh single-use token (24h). Does not log the token. */
 async function issueEmailVerificationTokenForEmail(

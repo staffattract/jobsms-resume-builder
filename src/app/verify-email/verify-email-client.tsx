@@ -1,10 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  resendEmailVerificationAction,
-  type ResendVerificationState,
-} from "@/lib/auth/email-verification-actions";
+import { resendEmailVerificationAction } from "@/lib/auth/email-verification-actions";
+import type { ResendVerificationState } from "@/lib/auth/email-verification-types";
 
 const btnClass =
   "w-full rounded-xl border border-zinc-600 bg-zinc-900/80 py-3.5 text-sm font-semibold text-zinc-100 shadow-lg shadow-black/20 transition hover:border-zinc-500 hover:bg-zinc-800/90 disabled:opacity-50";
