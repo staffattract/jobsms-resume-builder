@@ -61,6 +61,19 @@ const TEMPLATE_CSS: Record<string, string> = {
     body.tpl-bold-header h1 { font-size: 24pt; border-bottom: 2pt solid #111; padding-bottom: 8pt; margin-bottom: 10pt; }
     body.tpl-bold-header h2 { font-size: 11.5pt; color: #000; }
   `,
+  "blue-professional": `
+    body.tpl-blue-professional h1 { color: #0f172a; border-bottom: 0.75pt solid #93c5fd; padding-bottom: 6pt; margin-bottom: 4pt; }
+    body.tpl-blue-professional h2 { color: #1e3a8a; border-bottom-color: #3b82f6; border-bottom-width: 1.5pt; }
+  `,
+  "emerald-modern": `
+    body.tpl-emerald-modern h2 { border-bottom: none; border-left: 3pt solid #059669; padding-left: 8pt; color: #064e3b; }
+    body.tpl-emerald-modern h1 { color: #111; }
+  `,
+  "executive-accent": `
+    body.tpl-executive-accent h1 { color: #1c1917; border-bottom: 1pt solid #b45309; padding-bottom: 6pt; margin-bottom: 8pt; }
+    body.tpl-executive-accent h2 { color: #7f1d1d; border-bottom-color: #92400e; border-bottom-width: 1pt; }
+    body.tpl-executive-accent .target { color: #292524; }
+  `,
 };
 
 export function buildResumePdfTemplateCss(templateIdRaw: string): string {

@@ -77,6 +77,30 @@ export const RESUME_TEMPLATES: ResumeTemplateDefinition[] = [
     layout: "single",
     previewClass: "bg-gradient-to-br from-zinc-800 to-black",
   },
+  {
+    id: "blue-professional",
+    name: "Blue Professional",
+    tagline: "Navy accents and a crisp corporate rhythm—still ATS-friendly.",
+    categories: ["professional", "corporate", "accent"],
+    layout: "single",
+    previewClass: "bg-gradient-to-br from-slate-800 to-blue-900",
+  },
+  {
+    id: "emerald-modern",
+    name: "Emerald Modern",
+    tagline: "Emerald highlights with a clean, contemporary structure.",
+    categories: ["modern", "accent", "professional"],
+    layout: "single",
+    previewClass: "bg-gradient-to-br from-emerald-700 to-zinc-800",
+  },
+  {
+    id: "executive-accent",
+    name: "Executive Accent",
+    tagline: "Burgundy and muted gold touches for a refined executive look.",
+    categories: ["executive", "premium", "accent"],
+    layout: "single",
+    previewClass: "bg-gradient-to-br from-rose-950 to-amber-900",
+  },
 ];
 
 const TEMPLATE_BY_ID = new Map(

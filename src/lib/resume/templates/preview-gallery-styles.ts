@@ -186,6 +186,66 @@ export function galleryPreviewChrome(
         twoColAside:
           "min-w-0 space-y-4 border-t-4 border-zinc-900 bg-zinc-50 pt-3 md:border-l md:border-t-0 md:pl-4 dark:border-zinc-900 dark:bg-zinc-100",
       };
+    case "blue-professional":
+      return {
+        innerCard: `${baseInnerCard} border-l-4 border-blue-900`,
+        innerPad: "p-6 md:p-7 pl-5",
+        header:
+          "border-b border-blue-200 bg-blue-50/50 pb-4 text-left dark:border-blue-900/40 dark:bg-blue-950/30",
+        name: "text-[1.62rem] font-semibold tracking-tight text-blue-950 dark:text-blue-100",
+        contact: "mt-2 text-[0.76rem] font-medium text-zinc-700 dark:text-zinc-300",
+        links: "mt-2 text-[0.7rem] text-zinc-700 dark:text-zinc-300",
+        badge: "mt-3 text-[0.55rem] font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-300",
+        sectionTitle:
+          "mb-2 border-b-2 border-blue-800 pb-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-blue-950 dark:border-blue-400 dark:text-blue-100",
+        bodyText: "text-[0.8rem] leading-relaxed text-zinc-800 dark:text-zinc-200",
+        mainStack: "mt-7 space-y-7",
+        twoColGrid:
+          "mt-7 grid gap-6 text-[0.8rem] leading-relaxed md:grid-cols-[minmax(0,1fr)_min(172px,31%)]",
+        twoColMain: "min-w-0 space-y-7",
+        twoColAside:
+          "min-w-0 space-y-4 border-l-2 border-blue-800/80 bg-blue-50/70 pl-3 dark:border-blue-500 dark:bg-blue-950/40",
+      };
+    case "emerald-modern":
+      return {
+        innerCard: `${baseInnerCard} border-l-4 border-emerald-600`,
+        innerPad: "p-6 md:p-7 pl-5",
+        header:
+          "border-b border-emerald-200 pb-4 text-left dark:border-emerald-900/50",
+        name: "text-[1.68rem] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50",
+        contact: "mt-2 text-[0.76rem] text-zinc-600 dark:text-zinc-400",
+        links: "mt-2 text-[0.7rem] text-zinc-700 dark:text-zinc-300",
+        badge: "mt-3 text-[0.55rem] font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400",
+        sectionTitle:
+          "mb-2 border-l-2 border-emerald-600 pl-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-emerald-950 dark:border-emerald-500 dark:text-emerald-100",
+        bodyText: "text-[0.8rem] leading-relaxed text-zinc-800 dark:text-zinc-200",
+        mainStack: "mt-7 space-y-8",
+        twoColGrid:
+          "mt-7 grid gap-7 text-[0.8rem] leading-relaxed md:grid-cols-[minmax(0,1fr)_min(172px,31%)]",
+        twoColMain: "min-w-0 space-y-8",
+        twoColAside:
+          "min-w-0 space-y-4 border-l-2 border-emerald-600/80 bg-emerald-50/80 pl-3 dark:border-emerald-500 dark:bg-emerald-950/25",
+      };
+    case "executive-accent":
+      return {
+        innerCard: `${baseInnerCard} border-l-4 border-rose-900`,
+        innerPad: "p-6 md:p-7 pl-5",
+        header:
+          "border-b border-amber-200/90 bg-amber-50/40 pb-4 text-left dark:border-amber-900/40 dark:bg-amber-950/20",
+        name: "text-[1.7rem] font-bold tracking-tight text-zinc-900 dark:text-zinc-50",
+        contact: "mt-2 text-[0.76rem] text-zinc-700 dark:text-zinc-300",
+        links: "mt-2 text-[0.7rem] text-zinc-700 dark:text-zinc-300",
+        badge: "mt-3 text-[0.55rem] font-semibold uppercase tracking-wider text-rose-900 dark:text-rose-300",
+        sectionTitle:
+          "mb-2 border-l-2 border-amber-700 pl-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-rose-950 dark:border-amber-500 dark:text-rose-100",
+        bodyText: "text-[0.8rem] leading-relaxed text-zinc-800 dark:text-zinc-200",
+        mainStack: "mt-7 space-y-7",
+        twoColGrid:
+          "mt-7 grid gap-6 text-[0.8rem] leading-relaxed md:grid-cols-[minmax(0,1fr)_min(172px,31%)]",
+        twoColMain: "min-w-0 space-y-7",
+        twoColAside:
+          "min-w-0 space-y-4 border-l-2 border-amber-700/70 bg-amber-50/50 pl-3 dark:border-amber-600 dark:bg-rose-950/30",
+      };
     default:
       return professionalChrome;
   }
