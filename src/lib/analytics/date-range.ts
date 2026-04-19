@@ -161,4 +161,5 @@ export function filterTabFromResolved(
     }
     return "30d";
   }
+  return "30d";
 }
