@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { GalleryPreviewChrome } from "@/lib/resume/templates/preview-gallery-styles";
+import { galleryPreviewChrome } from "@/lib/resume/templates/preview-gallery-styles";
 import { getResumeTemplateDefinition } from "@/lib/resume/templates/registry";
 import type { ResumeContent } from "@/lib/resume/types";
 
@@ -12,6 +14,8 @@ type Props = {
   /** `pending` = entitlements loading (conservative lock); `denied` = no PDF access; `allowed` = full preview */
   exportAccess: PreviewExportAccess;
   onUnlockClick?: () => void;
+  /** Gallery mini-previews: stronger per-template silhouette (editor uses default). */
+  previewMode?: "default" | "gallery";
 };
 
 function formatJobDates(start?: string, end?: string | null) {
@@ -23,9 +27,18 @@ function formatJobDates(start?: string, end?: string | null) {
   return `${left} – ${right}`;
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
+const SECTION_TITLE_DEFAULT =
+  "mb-3 border-b border-zinc-200 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:border-zinc-700 dark:text-zinc-500";
+
+function SectionHeading({
+  children,
+  gallery,
+}: {
+  children: ReactNode;
+  gallery: GalleryPreviewChrome | null;
+}) {
   return (
-    <h3 className="mb-3 border-b border-zinc-200 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:border-zinc-700 dark:text-zinc-500">
+    <h3 className={gallery ? gallery.sectionTitle : SECTION_TITLE_DEFAULT}>
       {children}
     </h3>
   );
@@ -36,9 +49,12 @@ export function ResumeLivePreview({
   title,
   exportAccess,
   onUnlockClick,
+  previewMode = "default",
 }: Props) {
   const { contact, target, summary, experience, skills, education, meta } =
     content;
+  const gallery =
+    previewMode === "gallery" ? galleryPreviewChrome(meta.templateId) : null;
 
   const displayName =
     contact.fullName?.trim() ||
@@ -76,22 +92,48 @@ export function ResumeLivePreview({
         data-preview-surface
       >
         <div
-          className={`relative overflow-hidden rounded-sm bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] ring-1 ring-zinc-900/[0.04] dark:bg-zinc-50 dark:ring-zinc-900/20 ${
-            showLockOverlay ? "min-h-[520px]" : ""
-          }`}
+          className={
+            gallery
+              ? `${gallery.innerCard}${showLockOverlay ? " min-h-[520px]" : ""}`
+              : `relative overflow-hidden rounded-sm bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] ring-1 ring-zinc-900/[0.04] dark:bg-zinc-50 dark:ring-zinc-900/20${
+                  showLockOverlay ? " min-h-[520px]" : ""
+                }`
+          }
         >
-          <div className="p-7 md:p-9">
-            <header className="border-b border-zinc-200 pb-6 text-center dark:border-zinc-200">
-              <h1 className="text-[1.65rem] font-semibold tracking-tight text-zinc-950 md:text-[1.75rem]">
+          <div className={gallery ? gallery.innerPad : "p-7 md:p-9"}>
+            <header
+              className={
+                gallery
+                  ? gallery.header
+                  : "border-b border-zinc-200 pb-6 text-center dark:border-zinc-200"
+              }
+            >
+              <h1
+                className={
+                  gallery
+                    ? gallery.name
+                    : "text-[1.65rem] font-semibold tracking-tight text-zinc-950 md:text-[1.75rem]"
+                }
+              >
                 {displayName}
               </h1>
               {contactLine ? (
-                <p className="mt-2 text-[0.8rem] font-medium text-zinc-600">
+                <p
+                  className={
+                    gallery ? gallery.contact : "mt-2 text-[0.8rem] font-medium text-zinc-600"
+                  }
+                >
                   {contactLine}
                 </p>
               ) : null}
               {contact.links.some((l) => l.url) ? (
-                <p className="mt-3 text-[0.75rem] text-zinc-700">
+                <p
+                  className={
+                    gallery
+                      ? gallery.links
+                      : "mt-3 text-[0.75rem] text-zinc-700"
+                  }
+                >
                   {contact.links
                     .filter((l) => l.url)
                     .map((l, i) => (
@@ -114,17 +156,29 @@ export function ResumeLivePreview({
                     ))}
                 </p>
               ) : null}
-              <p className="mt-4 text-[0.65rem] font-medium uppercase tracking-wider text-zinc-400">
+              <p
+                className={
+                  gallery
+                    ? gallery.badge
+                    : "mt-4 text-[0.65rem] font-medium uppercase tracking-wider text-zinc-400"
+                }
+              >
                 {tpl.name} · Live preview
               </p>
             </header>
 
             {useTwoColumnLayout ? (
-              <div className="mt-8 grid gap-8 text-[0.8125rem] leading-relaxed text-zinc-800 md:grid-cols-[minmax(0,1fr)_min(200px,32%)] md:gap-10">
-                <div className="min-w-0 space-y-8">
+              <div
+                className={
+                  gallery
+                    ? `${gallery.twoColGrid} ${gallery.bodyText}`
+                    : "mt-8 grid gap-8 text-[0.8125rem] leading-relaxed text-zinc-800 md:grid-cols-[minmax(0,1fr)_min(200px,32%)] md:gap-10"
+                }
+              >
+                <div className={gallery ? gallery.twoColMain : "min-w-0 space-y-8"}>
                   {(target.jobTitle || target.company || target.notes?.trim()) && (
                     <section>
-                      <SectionTitle>Target role</SectionTitle>
+                      <SectionHeading gallery={gallery}>Target role</SectionHeading>
                       {(target.jobTitle || target.company) && (
                         <p className="font-semibold text-zinc-900">
                           {[target.jobTitle, target.company].filter(Boolean).join(" · ")}
@@ -139,7 +193,7 @@ export function ResumeLivePreview({
                   )}
                   {summary.text?.trim() ? (
                     <section>
-                      <SectionTitle>Summary</SectionTitle>
+                      <SectionHeading gallery={gallery}>Summary</SectionHeading>
                       <p className="whitespace-pre-wrap text-zinc-800">
                         {summary.text}
                       </p>
@@ -147,7 +201,7 @@ export function ResumeLivePreview({
                   ) : null}
                   {experience.items.length > 0 ? (
                     <section>
-                      <SectionTitle>Experience</SectionTitle>
+                      <SectionHeading gallery={gallery}>Experience</SectionHeading>
                       <ul className="space-y-6">
                         {experience.items.map((job) => (
                           <li key={job.id}>
@@ -187,10 +241,16 @@ export function ResumeLivePreview({
                     </section>
                   ) : null}
                 </div>
-                <div className="min-w-0 space-y-6 border-zinc-200 md:border-l md:pl-8 dark:border-zinc-200">
+                <div
+                  className={
+                    gallery
+                      ? gallery.twoColAside
+                      : "min-w-0 space-y-6 border-zinc-200 md:border-l md:pl-8 dark:border-zinc-200"
+                  }
+                >
                   {hasSkills ? (
                     <section>
-                      <SectionTitle>Skills</SectionTitle>
+                      <SectionHeading gallery={gallery}>Skills</SectionHeading>
                       <div className="space-y-4">
                         {skills.groups.map((g) => (
                           <div key={g.id}>
@@ -211,7 +271,7 @@ export function ResumeLivePreview({
                   ) : null}
                   {hasEdu ? (
                     <section>
-                      <SectionTitle>Education</SectionTitle>
+                      <SectionHeading gallery={gallery}>Education</SectionHeading>
                       <ul className="space-y-4">
                         {education.items.map((ed) => (
                           <li key={ed.id}>
@@ -239,10 +299,16 @@ export function ResumeLivePreview({
                 </div>
               </div>
             ) : (
-              <div className="mt-8 space-y-8 text-[0.8125rem] leading-relaxed text-zinc-800">
+              <div
+                className={
+                  gallery
+                    ? `${gallery.mainStack} ${gallery.bodyText}`
+                    : "mt-8 space-y-8 text-[0.8125rem] leading-relaxed text-zinc-800"
+                }
+              >
                 {(target.jobTitle || target.company || target.notes?.trim()) && (
                   <section>
-                    <SectionTitle>Target role</SectionTitle>
+                    <SectionHeading gallery={gallery}>Target role</SectionHeading>
                     {(target.jobTitle || target.company) && (
                       <p className="font-semibold text-zinc-900">
                         {[target.jobTitle, target.company].filter(Boolean).join(" · ")}
@@ -258,7 +324,7 @@ export function ResumeLivePreview({
 
                 {summary.text?.trim() ? (
                   <section>
-                    <SectionTitle>Summary</SectionTitle>
+                    <SectionHeading gallery={gallery}>Summary</SectionHeading>
                     <p className="whitespace-pre-wrap text-zinc-800">
                       {summary.text}
                     </p>
@@ -267,7 +333,7 @@ export function ResumeLivePreview({
 
                 {experience.items.length > 0 ? (
                   <section>
-                    <SectionTitle>Experience</SectionTitle>
+                    <SectionHeading gallery={gallery}>Experience</SectionHeading>
                     <ul className="space-y-6">
                       {experience.items.map((job) => (
                         <li key={job.id}>
@@ -309,7 +375,7 @@ export function ResumeLivePreview({
 
                 {hasSkills ? (
                   <section>
-                    <SectionTitle>Skills</SectionTitle>
+                    <SectionHeading gallery={gallery}>Skills</SectionHeading>
                     <div className="space-y-4">
                       {skills.groups.map((g) => (
                         <div key={g.id}>
@@ -331,7 +397,7 @@ export function ResumeLivePreview({
 
                 {education.items.length > 0 ? (
                   <section>
-                    <SectionTitle>Education</SectionTitle>
+                    <SectionHeading gallery={gallery}>Education</SectionHeading>
                     <ul className="space-y-4">
                       {education.items.map((ed) => (
                         <li key={ed.id}>

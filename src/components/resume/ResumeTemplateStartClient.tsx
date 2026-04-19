@@ -29,6 +29,7 @@ function TemplateMiniPreview({ templateId }: { templateId: string }) {
             content={content}
             title={MOCK_RESUME_TITLE}
             exportAccess="allowed"
+            previewMode="gallery"
           />
         </div>
       </div>
