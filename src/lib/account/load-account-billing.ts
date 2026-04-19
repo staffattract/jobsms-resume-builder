@@ -49,10 +49,15 @@ function priceIdsOrNull(): { oneTime: string; sub: string } | null {
   }
 }
 
+/** Catalog price id from an invoice line (Basil+ API: `pricing.price_details.price`, not `line.price`). */
 function firstLinePriceId(line: Stripe.InvoiceLineItem): string | null {
-  const p = line.price;
-  if (!p) return null;
-  return typeof p === "string" ? p : p.id;
+  const pricing = line.pricing;
+  if (!pricing || pricing.type !== "price_details") {
+    return null;
+  }
+  const raw = pricing.price_details?.price;
+  if (!raw) return null;
+  return typeof raw === "string" ? raw : raw.id;
 }
 
 function typeLabelForInvoice(
