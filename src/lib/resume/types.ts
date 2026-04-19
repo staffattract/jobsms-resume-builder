@@ -1,3 +1,8 @@
+import {
+  coerceResumeTemplateId,
+  DEFAULT_RESUME_TEMPLATE_ID,
+} from "@/lib/resume/templates/registry";
+
 export interface ContactLink {
   id: string;
   label?: string;
@@ -55,7 +60,10 @@ export interface EducationItem {
 
 export interface ResumeMeta {
   lastStepIndex: number;
+  /** Presentation template id (see `templates/registry`). */
   templateId: string;
+  /** When false, user must complete the template picker before the editor. */
+  templateSelectionComplete: boolean;
 }
 
 export interface ResumeContent {
@@ -76,7 +84,11 @@ export function defaultResumeContent(): ResumeContent {
     experience: { items: [] },
     skills: { groups: [] },
     education: { items: [] },
-    meta: { lastStepIndex: 0, templateId: "classic" },
+    meta: {
+      lastStepIndex: 0,
+      templateId: DEFAULT_RESUME_TEMPLATE_ID,
+      templateSelectionComplete: false,
+    },
   };
 }
 
@@ -232,10 +244,13 @@ export function normalizeResumeContent(raw: unknown): ResumeContent {
         meta.lastStepIndex <= 6
           ? meta.lastStepIndex
           : base.meta.lastStepIndex,
-      templateId:
-        typeof meta.templateId === "string" && meta.templateId.length > 0
-          ? meta.templateId
-          : base.meta.templateId,
+      templateId: coerceResumeTemplateId(
+        typeof meta.templateId === "string" ? meta.templateId : undefined,
+      ),
+      templateSelectionComplete:
+        typeof meta.templateSelectionComplete === "boolean"
+          ? meta.templateSelectionComplete
+          : true,
     },
   };
 }

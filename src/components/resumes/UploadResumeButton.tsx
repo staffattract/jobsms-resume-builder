@@ -38,7 +38,7 @@ export function UploadResumeButton() {
         return;
       }
       if (data.resumeId) {
-        router.push(`/resumes/${data.resumeId}`);
+        router.push(`/resumes/${data.resumeId}/template`);
       }
     } catch {
       setError("Network error. Please try again.");

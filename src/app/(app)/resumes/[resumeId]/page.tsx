@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getResumeForCurrentUser } from "@/lib/resume/queries";
 import { ResumeEditorShell } from "@/components/resume/ResumeEditorShell";
@@ -10,6 +10,10 @@ export default async function ResumeEditorPage({ params }: Props) {
   const resume = await getResumeForCurrentUser(resumeId);
   if (!resume) {
     notFound();
+  }
+
+  if (!resume.content.meta.templateSelectionComplete) {
+    redirect(`/resumes/${resumeId}/template`);
   }
 
   return (

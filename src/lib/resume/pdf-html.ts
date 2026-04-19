@@ -1,4 +1,9 @@
 import type { ResumeContent } from "@/lib/resume/types";
+import { coerceResumeTemplateId } from "@/lib/resume/templates/registry";
+import {
+  buildResumePdfTemplateCss,
+  resumePdfLayoutIsTwoColumn,
+} from "@/lib/resume/templates/pdf-template";
 
 function escapeHtml(s: string): string {
   return s
@@ -25,6 +30,9 @@ function formatRange(
 
 export function buildResumePdfHtml(title: string, content: ResumeContent): string {
   const { contact, target, summary, experience, skills, education } = content;
+  const templateId = coerceResumeTemplateId(content.meta.templateId);
+  const twoCol = resumePdfLayoutIsTwoColumn(templateId);
+  const bodyClass = `tpl-${templateId.replace(/[^a-z0-9-]/gi, "")}`;
 
   const name = escapeHtml(contact.fullName?.trim() || title.trim() || "Resume");
   const contactBits = [
@@ -115,41 +123,27 @@ export function buildResumePdfHtml(title: string, content: ResumeContent): strin
           .join("")}</section>`
       : "";
 
+  const mainBlock = `${summaryHtml}${expHtml}`;
+  const sideBlock = `${skillsHtml}${eduHtml}`;
+  const stackedBody = `${summaryHtml}${expHtml}${skillsHtml}${eduHtml}`;
+  const columns =
+    twoCol && (mainBlock.trim() || sideBlock.trim())
+      ? `<div class="grid2"><div class="col-main">${mainBlock}</div><div class="col-side">${sideBlock}</div></div>`
+      : stackedBody;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>${escapeHtml(title.trim() || "Resume")}</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #111; line-height: 1.45; margin: 0; padding: 36pt 40pt; }
-    h1 { font-size: 20pt; font-weight: 700; margin: 0 0 6pt; letter-spacing: -0.02em; }
-    h2 { font-size: 11pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #333; border-bottom: 1pt solid #ccc; padding-bottom: 4pt; margin: 18pt 0 8pt; }
-    .contact-line { font-size: 10pt; color: #333; margin-bottom: 4pt; }
-    .links { font-size: 9pt; color: #444; margin-bottom: 8pt; }
-    .link { white-space: nowrap; }
-    .target { font-size: 10pt; font-weight: 600; color: #222; margin-bottom: 12pt; }
-    .block { margin-bottom: 4pt; }
-    .body { margin: 0; }
-    .muted { color: #555; font-size: 9.5pt; margin-top: 2pt; }
-    .small { font-size: 9pt; }
-    .job { margin-bottom: 12pt; page-break-inside: avoid; }
-    .job-head { font-weight: 600; font-size: 11pt; }
-    ul { margin: 6pt 0 0 14pt; padding: 0; }
-    li { margin-bottom: 3pt; }
-    .skill-group { margin-bottom: 8pt; }
-    .edu { margin-bottom: 10pt; page-break-inside: avoid; }
-  </style>
+  ${buildResumePdfTemplateCss(templateId)}
 </head>
-<body>
+<body class="${bodyClass}">
   <h1>${name}</h1>
   ${contactBits.length ? `<div class="contact-line">${contactBits.join(" · ")}</div>` : ""}
   ${linksHtml ? `<div class="links">${linksHtml}</div>` : ""}
   ${targetLine ? `<div class="target">${targetLine}</div>` : ""}
-  ${summaryHtml}
-  ${expHtml}
-  ${skillsHtml}
-  ${eduHtml}
+  ${columns}
 </body>
 </html>`;
 }

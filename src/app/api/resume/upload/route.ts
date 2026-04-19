@@ -117,11 +117,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const contentWithTemplateGate = {
+    ...content,
+    meta: {
+      ...content.meta,
+      templateSelectionComplete: false,
+    },
+  };
+
   const resume = await prisma.resume.create({
     data: {
       userId: user.id,
       title: titleFromContent(content.contact.fullName),
-      content: content as unknown as Prisma.InputJsonValue,
+      content: contentWithTemplateGate as unknown as Prisma.InputJsonValue,
       schemaVersion: 1,
     },
   });

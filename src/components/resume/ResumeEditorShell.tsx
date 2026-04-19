@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -418,6 +419,12 @@ export function ResumeEditorShell({
               >
                 {saveStatusLabel}
               </span>
+              <Link
+                href={`/resumes/${resumeId}/template?change=1`}
+                className={`${btnSecondary} inline-flex items-center justify-center no-underline`}
+              >
+                Change template
+              </Link>
               <button
                 type="button"
                 className={btnSecondary}
