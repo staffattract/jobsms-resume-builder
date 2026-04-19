@@ -64,19 +64,30 @@ function typeLabelForInvoice(
   invoice: Stripe.Invoice,
   prices: { oneTime: string; sub: string } | null,
 ): string {
-  if (invoice.subscription) {
+  const reason = invoice.billing_reason;
+  if (reason && String(reason).startsWith("subscription")) {
     return "Subscription";
   }
+
+  const parent = invoice.parent;
+  if (
+    parent?.type === "subscription_details" &&
+    parent.subscription_details?.subscription
+  ) {
+    return "Subscription";
+  }
+
   const lines = invoice.lines?.data ?? [];
   for (const line of lines) {
+    if (line.subscription) {
+      return "Subscription";
+    }
     const pid = firstLinePriceId(line);
     if (!pid || !prices) continue;
     if (pid === prices.oneTime) return "One-time PDF";
     if (pid === prices.sub) return "Subscription";
   }
-  if (invoice.billing_reason?.startsWith("subscription")) {
-    return "Subscription";
-  }
+
   return "Payment";
 }
 
