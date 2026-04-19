@@ -48,7 +48,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (path.startsWith("/dashboard") || path.startsWith("/resumes")) {
+  if (
+    path.startsWith("/dashboard") ||
+    path.startsWith("/resumes") ||
+    path.startsWith("/account") ||
+    path.startsWith("/billing")
+  ) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
