@@ -22,20 +22,6 @@ import {
 
 export type AuthFormState = { error?: string };
 
-function registerErrorFields(e: unknown): {
-  name: string;
-  message: string;
-  code?: string;
-} {
-  if (e instanceof Error) {
-    const codeRaw = (e as { code?: string | number }).code;
-    const code =
-      codeRaw !== undefined && codeRaw !== null ? String(codeRaw) : undefined;
-    return { name: e.name, message: e.message, ...(code ? { code } : {}) };
-  }
-  return { name: "non-Error", message: String(e) };
-}
-
 export async function registerAction(
   _prev: AuthFormState,
   formData: FormData,
@@ -54,36 +40,31 @@ export async function registerAction(
   }
 
   try {
-    console.log("[register] CREATE_START");
     const user = await createUserWithCredentials({
       email,
       password,
       name: nameRaw || undefined,
     });
-    console.log("[register] CREATE_SUCCESS", { userId: user.id });
 
-    console.log("[register] VERIFY_SEND_START");
     const emailSend = await sendVerificationEmailForUserEmail(user.email);
     if (!emailSend.ok) {
-      const hint = emailSend.error.slice(0, 160);
-      console.error("[register] VERIFY_SEND_FAILED", { message: hint });
-    } else {
-      console.log("[register] VERIFY_SEND_SUCCESS");
+      console.error("[auth:register] verification email failed", emailSend.error);
     }
 
     const token = await createDbSession(user.id);
     await setAuthSessionCookie(token);
-    console.log("[register] SESSION_CREATED");
   } catch (e) {
     if (isUniqueConstraintError(e)) {
       console.log("[auth:register] validation fail", { reason: "duplicate_email" });
       return { error: "An account with this email already exists" };
     }
-    console.error("[register] OUTER_ERROR", registerErrorFields(e));
+    console.error(
+      "[auth:register] caught error",
+      e instanceof Error ? e.message : String(e),
+    );
     return { error: "Something went wrong. Please try again." };
   }
 
-  console.log("[register] REDIRECT_VERIFY_EMAIL");
   redirect("/verify-email");
 }
 

@@ -16,25 +16,10 @@ import type {
 const VERIFY_LINK_INVALID_MESSAGE =
   "This confirmation link is invalid or has expired.";
 
-function verifyEmailErrorFields(e: unknown): {
-  name: string;
-  message: string;
-  code?: string;
-} {
-  if (e instanceof Error) {
-    const codeRaw = (e as { code?: string | number }).code;
-    const code =
-      codeRaw !== undefined && codeRaw !== null ? String(codeRaw) : undefined;
-    return { name: e.name, message: e.message, ...(code ? { code } : {}) };
-  }
-  return { name: "non-Error", message: String(e) };
-}
-
 /** Creates a fresh single-use token (24h). Does not log the token. */
 async function issueEmailVerificationTokenForEmail(
   email: string,
 ): Promise<string> {
-  console.log("[verify-email] TOKEN_CREATE_START");
   const normalizedEmail = normalizeEmail(email);
   const token = generatePasswordResetToken();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -46,7 +31,6 @@ async function issueEmailVerificationTokenForEmail(
       data: { email: normalizedEmail, token, expiresAt },
     });
   });
-  console.log("[verify-email] TOKEN_CREATE_SUCCESS");
   return token;
 }
 
@@ -66,25 +50,25 @@ export async function sendVerificationEmailForUserEmail(
     const token = await issueEmailVerificationTokenForEmail(normalizedEmail);
     const confirmUrl = buildConfirmEmailUrl(token);
     if (!confirmUrl) {
-      console.error("[verify-email] EMAIL_SEND_FAILED", {
-        message: "confirm_url_missing_check_APP_URL",
-      });
+      console.error(
+        "[email-verification] confirm URL missing; check NEXT_PUBLIC_APP_URL / APP_URL / VERCEL_URL",
+      );
       return { ok: false, error: "Email could not be sent (app URL not configured)." };
     }
-    console.log("[verify-email] EMAIL_SEND_START");
     const send = await sendEmailVerificationEmail({
       to: user.email,
       confirmUrl,
     });
     if (!send.ok) {
-      const hint = send.error.slice(0, 160);
-      console.error("[verify-email] EMAIL_SEND_FAILED", { message: hint });
+      console.error("[email-verification] Resend failed", send.error);
       return { ok: false, error: "We could not send the email. Please try again shortly." };
     }
-    console.log("[verify-email] EMAIL_SEND_SUCCESS");
     return { ok: true };
   } catch (e) {
-    console.error("[verify-email] OUTER_ERROR", verifyEmailErrorFields(e));
+    console.error(
+      "[email-verification] send error",
+      e instanceof Error ? e.message : String(e),
+    );
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }
