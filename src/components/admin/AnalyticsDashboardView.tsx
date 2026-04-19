@@ -65,7 +65,7 @@ export function AnalyticsDashboardView({ counts: c, campaigns }: Props) {
           <StatCard label="Start Building clicks" value={startClicks} />
           <StatCard label="See Pricing clicks" value={pricingClicks} />
           <StatCard label="Download PDF clicks" value={downloadClicks} />
-          <StatCard label="One-time purchases" value={oneTime} />
+          <StatCard label="Standalone PDF purchases" value={oneTime} />
           <StatCard label="Subscription purchases" value={subscription} />
         </div>
       </section>
@@ -81,7 +81,7 @@ export function AnalyticsDashboardView({ counts: c, campaigns }: Props) {
           <StatCard
             label="Paid conversions"
             value={paidTotal}
-            hint="One-time + subscription successes"
+            hint="Non-subscription + subscription purchase events"
           />
         </div>
       </section>
@@ -92,9 +92,9 @@ export function AnalyticsDashboardView({ counts: c, campaigns }: Props) {
         </h2>
         <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500">
           Users = signups with stored <code className="text-zinc-400">ad_id</code>.
-          Purchases / revenue from analytics events × placeholder amounts ($4.99
-          one-time, $9.99 per subscription success); $1 intro trial charges are not
-          modeled here.
+          Purchases / revenue from analytics events × placeholder amounts (standalone
+          PDF + $9.99 per subscription success); $1 intro trial charges are not modeled
+          here.
         </p>
         <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
           <table className="w-full min-w-[420px] text-left text-sm text-zinc-200">

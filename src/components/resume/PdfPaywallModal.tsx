@@ -6,8 +6,6 @@ type Props = {
   onClose: () => void;
 };
 
-type CheckoutKind = "one_time" | "subscription";
-
 function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -30,12 +28,12 @@ function CheckIcon({ className }: { className?: string }) {
 }
 
 export function PdfPaywallModal({ open, onClose }: Props) {
-  const [loadingKind, setLoadingKind] = useState<CheckoutKind | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setLoadingKind(null);
+      setRedirecting(false);
       setError(null);
     }
   }, [open]);
@@ -53,15 +51,15 @@ export function PdfPaywallModal({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  async function startCheckout(kind: CheckoutKind) {
+  async function startSubscriptionCheckout() {
     setError(null);
-    setLoadingKind(kind);
+    setRedirecting(true);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ kind }),
+        body: JSON.stringify({ kind: "subscription" }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -83,7 +81,7 @@ export function PdfPaywallModal({ open, onClose }: Props) {
     } catch {
       setError("Could not start checkout. Try again.");
     } finally {
-      setLoadingKind(null);
+      setRedirecting(false);
     }
   }
 
@@ -175,57 +173,35 @@ export function PdfPaywallModal({ open, onClose }: Props) {
           </p>
         ) : null}
 
-        <div className="mt-7 space-y-4">
-          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500/85 bg-gradient-to-b from-emerald-950/55 to-zinc-900 p-5 shadow-xl shadow-emerald-950/25 ring-1 ring-emerald-500/20 sm:p-6">
+        <div className="mx-auto mt-7 max-w-md">
+          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500/85 bg-gradient-to-b from-emerald-950/55 to-zinc-900 p-5 text-center shadow-xl shadow-emerald-950/25 ring-1 ring-emerald-500/20 sm:p-6">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950 shadow-sm">
-              Best value
+              Resume Pro
             </span>
-            <h3 className="text-sm font-semibold text-white">Resume Pro</h3>
-            <p className="mt-2 text-2xl font-bold tracking-tight text-white">
+            <h3 className="mt-3 text-sm font-semibold text-white sm:text-base">
+              Start your $1 trial
+            </h3>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
               $1 today
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-              $1 today, then $9.99/month after 10 days. Cancel anytime.
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-zinc-300">
+              Then $9.99/month after 10 days. Cancel anytime.
             </p>
-            <p className="mt-3 flex-1 text-xs leading-relaxed text-zinc-500">
+            <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-zinc-500">
               Download instantly after checkout. Unlimited PDFs while subscribed.
+              Recurring billing begins after your 10-day intro unless you cancel in the
+              billing portal.
             </p>
             <button
               type="button"
               className="mt-5 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50 sm:py-4 sm:text-base"
-              disabled={loadingKind !== null}
-              onClick={() => void startCheckout("subscription")}
+              disabled={redirecting}
+              onClick={() => void startSubscriptionCheckout()}
             >
-              {loadingKind === "subscription"
-                ? "Redirecting…"
-                : "Start $1 Trial & Download"}
-            </button>
-          </div>
-
-          <div className="flex flex-col rounded-xl border border-zinc-800/90 bg-zinc-900/30 p-4 sm:p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-              Prefer not to subscribe?
-            </p>
-            <h3 className="mt-1 text-sm font-semibold text-zinc-300">Single PDF</h3>
-            <p className="mt-0.5 text-lg font-bold text-zinc-400">$4.99</p>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              One export, no subscription.
-            </p>
-            <button
-              type="button"
-              className="mt-3 w-full rounded-xl border border-zinc-600 bg-zinc-900 py-2.5 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:opacity-50 sm:text-sm"
-              disabled={loadingKind !== null}
-              onClick={() => void startCheckout("one_time")}
-            >
-              {loadingKind === "one_time" ? "Redirecting…" : "Download once — $4.99"}
+              {redirecting ? "Redirecting…" : "Start $1 Trial & Download"}
             </button>
           </div>
         </div>
-
-        <p className="mt-5 text-center text-xs leading-relaxed text-zinc-400 sm:text-sm">
-          Subscription billing begins after the 10-day intro unless you cancel in the
-          billing portal. One-time checkout is a single charge only.
-        </p>
 
         <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-500">
           Secure checkout powered by Stripe. Card details are not stored on our

@@ -110,9 +110,11 @@ export function ReviewStep({
           {downloadBusy ? "Preparing…" : "Download Now"}
         </button>
         <p className="mt-3 max-w-md text-xs leading-relaxed text-zinc-500 dark:text-zinc-500">
-          Immediate PDF access after you complete checkout. You&apos;ll pay $1 today to
-          start; after a 10-day intro, billing continues at $9.99/month until you cancel
-          in your account billing portal. Same secure flow as &quot;Download PDF&quot; in
+          Immediate PDF access after checkout.{" "}
+          <span className="font-medium text-zinc-600 dark:text-zinc-400">
+            $1 today, then $9.99/month after 10 days. Cancel anytime.
+          </span>{" "}
+          Manage billing in your account. Same secure flow as &quot;Download PDF&quot; in
           the header.
         </p>
       </div>

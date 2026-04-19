@@ -84,7 +84,7 @@ function typeLabelForInvoice(
     }
     const pid = firstLinePriceId(line);
     if (!pid || !prices) continue;
-    if (pid === prices.oneTime) return "One-time PDF";
+    if (pid === prices.oneTime) return "PDF purchase";
     if (pid === prices.sub) return "Subscription";
   }
 
@@ -111,9 +111,9 @@ function planSummaryFromTier(
 ): string {
   switch (tier) {
     case "FREE":
-      return "Free — PDF export requires an active plan (trial subscription or one-time purchase at checkout).";
+      return "Free — PDF export requires an active subscription (start with $1 at checkout).";
     case "ONE_TIME":
-      return `One-time PDF — ${remaining} download${remaining === 1 ? "" : "s"} remaining.`;
+      return `PDF purchase — ${remaining} download${remaining === 1 ? "" : "s"} remaining.`;
     case "SUBSCRIPTION":
       if (subActive && subUntil) {
         return `Subscription — active through ${subUntil.toLocaleDateString(undefined, {

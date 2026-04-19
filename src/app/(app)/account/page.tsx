@@ -80,7 +80,7 @@ export default async function AccountPage() {
               <dt className="text-zinc-500 dark:text-zinc-400">Access level</dt>
               <dd className="font-medium text-zinc-900 dark:text-zinc-100">
                 {data.tier === "FREE" && "Free"}
-                {data.tier === "ONE_TIME" && "One-time PDF"}
+                {data.tier === "ONE_TIME" && "PDF purchase (credits)"}
                 {data.tier === "SUBSCRIPTION" && "Subscription"}
               </dd>
             </div>
@@ -196,9 +196,8 @@ export default async function AccountPage() {
             </div>
           ) : (
             <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Billing management becomes available after you complete checkout (trial
-              subscription or one-time PDF, when offered) so we can link a Stripe
-              customer to your account.
+              Billing management becomes available after you complete subscription
+              checkout so we can link a Stripe customer to your account.
             </p>
           )}
         </SectionCard>
