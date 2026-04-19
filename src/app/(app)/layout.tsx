@@ -45,6 +45,48 @@ export default async function AppLayout({
       <div className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 sm:py-8">
         {children}
       </div>
+      <footer className="mt-auto border-t border-zinc-200/80 bg-white/50 py-3.5 dark:border-zinc-800/90 dark:bg-zinc-950/50">
+        <div className="mx-auto max-w-[1600px] px-4 text-center text-[11px] leading-relaxed text-zinc-500 sm:px-6 dark:text-zinc-500">
+          <nav
+            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4"
+            aria-label="Legal"
+          >
+            <Link
+              href="/terms"
+              className="font-medium text-zinc-600 underline-offset-2 transition hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              Terms &amp; Conditions
+            </Link>
+            <span
+              className="select-none text-zinc-300 dark:text-zinc-600"
+              aria-hidden
+            >
+              ·
+            </span>
+            <Link
+              href="/privacy"
+              className="font-medium text-zinc-600 underline-offset-2 transition hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              Privacy Policy
+            </Link>
+            <span
+              className="select-none text-zinc-300 dark:text-zinc-600"
+              aria-hidden
+            >
+              ·
+            </span>
+            <span className="text-zinc-500 dark:text-zinc-500">
+              Contact:{" "}
+              <a
+                href="mailto:support@resumeblues.com"
+                className="font-medium text-zinc-600 underline decoration-zinc-300/80 underline-offset-2 transition hover:text-zinc-900 hover:decoration-zinc-500 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-zinc-200 dark:hover:decoration-zinc-500"
+              >
+                support@resumeblues.com
+              </a>
+            </span>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
