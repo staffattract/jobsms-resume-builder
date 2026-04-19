@@ -11,6 +11,7 @@ Single reference for configuration. Values are read at runtime (build/runtime fo
 | `STRIPE_WEBHOOK_SECRET` | Verifying Stripe webhooks (`src/lib/stripe/config.ts`). |
 | `STRIPE_PRICE_ONE_TIME_PDF` | One-time Checkout price id. |
 | `STRIPE_PRICE_MONTHLY_SUB` | Subscription Checkout price id (recurring). |
+| `STRIPE_PRICE_TRIAL_ONE_TIME` | One-time Stripe price id ($1) charged with subscription checkout before the trial. |
 | `OPENAI_API_KEY` | AI features (`src/lib/ai/openai-provider.ts`). |
 
 ## Strongly recommended for production

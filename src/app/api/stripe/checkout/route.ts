@@ -77,12 +77,24 @@ export async function POST(request: Request) {
     parsed.data.kind === "subscription"
       ? {
           mode: "subscription" as const,
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: [
+            {
+              price: process.env.STRIPE_PRICE_TRIAL_ONE_TIME!,
+              quantity: 1,
+            },
+            {
+              price: process.env.STRIPE_PRICE_MONTHLY_SUB!,
+              quantity: 1,
+            },
+          ],
+          subscription_data: {
+            trial_period_days: 10,
+            metadata: { ...baseMetadata },
+          },
           success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${base}/billing/checkout-return?canceled=1`,
           client_reference_id: user.id,
           metadata: { ...baseMetadata },
-          subscription_data: { metadata: { ...baseMetadata } },
           customer: user.stripeCustomerId ?? undefined,
           customer_email: user.stripeCustomerId ? undefined : user.email ?? undefined,
           allow_promotion_codes: false,
