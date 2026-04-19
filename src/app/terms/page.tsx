@@ -60,8 +60,15 @@ export default function TermsPage() {
         <h2 className={h2}>3. Payments &amp; Subscriptions</h2>
         <ul className={ul}>
           <li>Payments are processed securely via Stripe.</li>
-          <li>Certain features (including PDF downloads) require a paid subscription.</li>
-          <li>Subscriptions may renew automatically unless canceled.</li>
+          <li>
+            PDF downloads and similar export features require a paid plan. Checkout shows
+            current pricing, any introductory charge (for example, a $1 start), trial or
+            intro length, and renewal terms before you pay.
+          </li>
+          <li>
+            Subscriptions may renew automatically after any introductory or trial period
+            unless canceled through your billing portal or as otherwise shown at checkout.
+          </li>
           <li>You are responsible for managing your billing and cancellation.</li>
         </ul>
 

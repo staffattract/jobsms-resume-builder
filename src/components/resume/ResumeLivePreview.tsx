@@ -462,14 +462,15 @@ export function ResumeLivePreview({
                       Export a polished PDF anytime
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                      Unlock downloads to save and share your full resume.
+                      Start for $1 today — download instantly, then $9.99/month after 10
+                      days. Cancel anytime.
                     </p>
                     <button
                       type="button"
                       onClick={onUnlockClick}
                       className="mt-4 w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.99] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                     >
-                      View plans & pricing
+                      Start $1 trial
                     </button>
                   </div>
                 )}

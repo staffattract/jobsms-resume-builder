@@ -77,8 +77,8 @@ export function CheckoutReturnClient() {
           Billing
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Nothing to show here. Open checkout from the resume editor to purchase
-          PDF access.
+          Nothing to show here. Open checkout from the resume editor to start your plan
+          and export PDFs.
         </p>
         <p className="mt-4">
           <Link href="/resumes" className="text-sm text-blue-600 underline">

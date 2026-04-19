@@ -34,8 +34,8 @@ export default function RegisterPage() {
             Create your account
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Start free — build and refine your resume with AI. You only pay when
-            you’re ready to download a PDF.
+            Build and refine your resume with AI. When you&apos;re ready to export,
+            start for $1 today — then $9.99/month after 10 days. Cancel anytime.
           </p>
         </div>
 

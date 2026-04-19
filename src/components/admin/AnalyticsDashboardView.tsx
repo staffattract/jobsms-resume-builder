@@ -92,7 +92,9 @@ export function AnalyticsDashboardView({ counts: c, campaigns }: Props) {
         </h2>
         <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500">
           Users = signups with stored <code className="text-zinc-400">ad_id</code>.
-          Purchases / revenue from analytics events × list prices ($4.99 / $9.99).
+          Purchases / revenue from analytics events × placeholder amounts ($4.99
+          one-time, $9.99 per subscription success); $1 intro trial charges are not
+          modeled here.
         </p>
         <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
           <table className="w-full min-w-[420px] text-left text-sm text-zinc-200">

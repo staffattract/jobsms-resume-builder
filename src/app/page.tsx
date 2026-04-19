@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 export const metadata: Metadata = {
   title: "AI Resume Builder — Recruiter-ready in minutes",
   description:
-    "Build a recruiter-ready resume with AI. ATS-friendly formatting, stronger bullets, instant PDF download.",
+    "Build a recruiter-ready resume with AI. Start for $1 today, download instantly, then $9.99/month after 10 days — cancel anytime.",
 };
 
 export const dynamic = "force-dynamic";
@@ -87,7 +87,8 @@ export default async function Home() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-zinc-400 sm:mt-5 sm:text-lg">
               Build a recruiter-ready, ATS-friendly resume with AI — then download a
-              polished PDF instantly.
+              polished PDF instantly. Start for $1 today; $9.99/month after 10 days.
+              Cancel anytime.
             </p>
 
             <div className="mx-auto mt-8 max-w-4xl text-left" aria-hidden>
@@ -166,7 +167,7 @@ export default async function Home() {
                           Export
                         </div>
                         <div className="text-[10px] font-semibold text-zinc-900">
-                          Unlock PDF
+                          $1 trial
                         </div>
                       </div>
                     </div>
@@ -184,7 +185,8 @@ export default async function Home() {
               btnSecondary={btnSecondary}
             />
             <p className="mt-5 text-center text-base text-zinc-300 sm:text-lg">
-              Try it free — only pay if you download. No credit card required.
+              Start for $1 today. Download instantly. Then $9.99/month after 10 days —
+              cancel anytime.
             </p>
           </div>
         </section>
@@ -272,44 +274,45 @@ export default async function Home() {
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>
-            <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-lg sm:p-7">
-                <h3 className="text-lg font-semibold text-white">Download once</h3>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-                  $4.99
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-500">
-                  Perfect for a single job application
-                </p>
-                <p className="mt-5 text-center text-sm leading-relaxed text-zinc-400">
-                  Try it free — only pay if you download. No credit card required.
-                </p>
-              </div>
-              <div className="relative rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-b from-emerald-950/50 to-zinc-900 p-6 shadow-xl shadow-emerald-950/20 sm:p-7">
+            <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-zinc-400">
+              Start your $1 trial — $1 today, then $9.99/month after 10 days. Cancel
+              anytime.
+            </p>
+            <div className="mt-8 grid gap-4 md:grid-cols-[1.15fr_0.85fr] md:items-stretch md:gap-6">
+              <div className="relative order-1 rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-b from-emerald-950/50 to-zinc-900 p-6 shadow-xl shadow-emerald-950/20 sm:p-7">
                 <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950">
-                  Best Value
+                  Most popular
                 </span>
                 <h3 className="text-lg font-semibold text-white">Resume Pro</h3>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-                  $9.99
-                  <span className="text-base font-medium text-zinc-400">/month</span>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-white">
+                  $1<span className="text-lg font-semibold text-zinc-400"> today</span>
                 </p>
-                <ul className="mt-4 space-y-2 text-sm text-zinc-300">
+                <p className="mt-1 text-sm font-medium text-zinc-300">
+                  Then $9.99/month after 10 days · Cancel anytime
+                </p>
+                <ul className="mt-5 space-y-2 text-sm text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
-                    Unlimited PDF downloads
+                    Download instantly after checkout
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
-                    Ongoing edits
+                    Unlimited PDFs while subscribed
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
-                    AI improvements anytime
+                    Ongoing edits &amp; AI improvements
                   </li>
                 </ul>
-                <p className="mt-5 text-center text-sm leading-relaxed text-zinc-400">
-                  Try it free — only pay if you download. No credit card required.
+              </div>
+              <div className="order-2 rounded-2xl border border-zinc-800/90 bg-zinc-900/60 p-5 shadow-md sm:p-6">
+                <h3 className="text-sm font-semibold text-zinc-400">Single PDF only</h3>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-zinc-200">
+                  $4.99
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                  One export, no subscription. Available at checkout if you prefer not to
+                  subscribe.
                 </p>
               </div>
             </div>
@@ -319,11 +322,10 @@ export default async function Home() {
                 href="/register"
                 className={`${btnPrimary} w-full px-8 py-4 text-base font-semibold shadow-xl shadow-black/35 sm:w-auto sm:min-w-[280px]`}
               >
-                Get Started for Free
+                Start your $1 trial
               </Link>
               <p className="mt-2.5 max-w-lg text-center text-[13px] leading-snug text-zinc-200 sm:text-sm">
-                Start free. Build and preview your resume — you’ll choose your plan
-                when you download.
+                $1 today, then $9.99/month after 10 days. Cancel anytime.
               </p>
             </div>
           </div>
@@ -362,7 +364,8 @@ export default async function Home() {
         <section className="border-b border-zinc-800 bg-zinc-950 px-4 py-7 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-base font-semibold text-zinc-100 sm:text-lg">
-              Try it risk-free. Only pay when you’re ready to download.
+              Download instantly after checkout. $1 today, then $9.99/month after 10 days
+              — cancel anytime.
             </p>
           </div>
         </section>

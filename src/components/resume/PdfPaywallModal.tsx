@@ -120,7 +120,7 @@ export function PdfPaywallModal({ open, onClose }: Props) {
             Your resume is ready
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
-            Download your polished, ATS-friendly resume in seconds
+            $1 today, then $9.99/month after 10 days. Cancel anytime.
           </p>
         </div>
 
@@ -152,7 +152,7 @@ export function PdfPaywallModal({ open, onClose }: Props) {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-25% via-zinc-950/50 to-zinc-950 backdrop-blur-[3px]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center border-t border-zinc-800/80 bg-zinc-950/85 px-4 py-2.5">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Your resume · unlock to download
+              Your resume · start $1 trial to download
             </span>
           </div>
         </div>
@@ -175,50 +175,56 @@ export function PdfPaywallModal({ open, onClose }: Props) {
           </p>
         ) : null}
 
-        <div className="mt-7 grid gap-4 md:grid-cols-2 md:gap-5">
-          <div className="flex flex-col rounded-2xl border border-zinc-700 bg-zinc-900/40 p-5">
-            <h3 className="text-sm font-semibold text-white">Download once</h3>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-white">$4.99</p>
-            <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-500">
-              One polished PDF when you need it.
-            </p>
-            <button
-              type="button"
-              className="mt-4 w-full rounded-xl border border-zinc-600 bg-zinc-800 py-3.5 text-sm font-semibold text-white shadow-md transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-50"
-              disabled={loadingKind !== null}
-              onClick={() => void startCheckout("one_time")}
-            >
-              {loadingKind === "one_time" ? "Redirecting…" : "Download PDF — $4.99"}
-            </button>
-          </div>
-
-          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500/85 bg-gradient-to-b from-emerald-950/55 to-zinc-900 p-5 shadow-xl shadow-emerald-950/25 ring-1 ring-emerald-500/20">
+        <div className="mt-7 space-y-4">
+          <div className="relative flex flex-col rounded-2xl border-2 border-emerald-500/85 bg-gradient-to-b from-emerald-950/55 to-zinc-900 p-5 shadow-xl shadow-emerald-950/25 ring-1 ring-emerald-500/20 sm:p-6">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950 shadow-sm">
-              Best Value
+              Best value
             </span>
             <h3 className="text-sm font-semibold text-white">Resume Pro</h3>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-white">
-              $9.99
-              <span className="text-base font-semibold text-zinc-400">/month</span>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-white">
+              $1 today
             </p>
-            <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400">
-              Unlimited PDFs while you&apos;re subscribed.
+            <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+              $1 today, then $9.99/month after 10 days. Cancel anytime.
+            </p>
+            <p className="mt-3 flex-1 text-xs leading-relaxed text-zinc-500">
+              Download instantly after checkout. Unlimited PDFs while subscribed.
             </p>
             <button
               type="button"
-              className="mt-4 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50"
+              className="mt-5 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50 sm:py-4 sm:text-base"
               disabled={loadingKind !== null}
               onClick={() => void startCheckout("subscription")}
             >
               {loadingKind === "subscription"
                 ? "Redirecting…"
-                : "Go Pro — $9.99/month"}
+                : "Start $1 Trial & Download"}
+            </button>
+          </div>
+
+          <div className="flex flex-col rounded-xl border border-zinc-800/90 bg-zinc-900/30 p-4 sm:p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              Prefer not to subscribe?
+            </p>
+            <h3 className="mt-1 text-sm font-semibold text-zinc-300">Single PDF</h3>
+            <p className="mt-0.5 text-lg font-bold text-zinc-400">$4.99</p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              One export, no subscription.
+            </p>
+            <button
+              type="button"
+              className="mt-3 w-full rounded-xl border border-zinc-600 bg-zinc-900 py-2.5 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:opacity-50 sm:text-sm"
+              disabled={loadingKind !== null}
+              onClick={() => void startCheckout("one_time")}
+            >
+              {loadingKind === "one_time" ? "Redirecting…" : "Download once — $4.99"}
             </button>
           </div>
         </div>
 
-        <p className="mt-5 text-center text-sm font-medium text-zinc-300">
-          Pay only when you download. No commitment.
+        <p className="mt-5 text-center text-xs leading-relaxed text-zinc-400 sm:text-sm">
+          Subscription billing begins after the 10-day intro unless you cancel in the
+          billing portal. One-time checkout is a single charge only.
         </p>
 
         <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-500">

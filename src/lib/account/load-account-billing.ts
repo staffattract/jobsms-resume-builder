@@ -111,7 +111,7 @@ function planSummaryFromTier(
 ): string {
   switch (tier) {
     case "FREE":
-      return "Free — PDF export requires a purchase.";
+      return "Free — PDF export requires an active plan (trial subscription or one-time purchase at checkout).";
     case "ONE_TIME":
       return `One-time PDF — ${remaining} download${remaining === 1 ? "" : "s"} remaining.`;
     case "SUBSCRIPTION":

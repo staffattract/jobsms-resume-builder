@@ -141,13 +141,13 @@ export default async function AccountPage() {
             </p>
           ) : !data.stripeCustomerId ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No Stripe customer on file yet. After your first purchase, invoices will
+              No Stripe customer on file yet. After you complete checkout, invoices will
               appear here.
             </p>
           ) : data.payments.length === 0 ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No paid invoices found for this account. Some one-time checkouts may not
-              create an invoice depending on Stripe settings.
+              No paid invoices found for this account yet. Some charges may appear after
+              checkout completes, depending on Stripe settings.
             </p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-zinc-200/80 dark:border-zinc-800">
@@ -196,9 +196,9 @@ export default async function AccountPage() {
             </div>
           ) : (
             <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Billing management becomes available after you complete a purchase
-              (subscription or one-time PDF) so we can link a Stripe customer to your
-              account.
+              Billing management becomes available after you complete checkout (trial
+              subscription or one-time PDF, when offered) so we can link a Stripe
+              customer to your account.
             </p>
           )}
         </SectionCard>
