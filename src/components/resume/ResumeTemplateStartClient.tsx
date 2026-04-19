@@ -1,12 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ResumeLivePreview } from "@/components/resume/ResumeLivePreview";
 import {
   applyAiRecommendedResumeTemplate,
   selectResumeTemplate,
 } from "@/lib/resume/actions";
+import {
+  MOCK_RESUME_TITLE,
+  mockResumeContentForTemplate,
+} from "@/lib/resume/templates/mock-resume";
 import { RESUME_TEMPLATES } from "@/lib/resume/templates/registry";
+
+function TemplateMiniPreview({ templateId }: { templateId: string }) {
+  const content = useMemo(
+    () => mockResumeContentForTemplate(templateId),
+    [templateId],
+  );
+  return (
+    <div className="relative h-[280px] overflow-hidden rounded-t-xl border border-b-0 border-zinc-200/90 bg-zinc-100/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-zinc-800 dark:bg-zinc-900/50 dark:shadow-none">
+      <div
+        className="pointer-events-none absolute left-1/2 top-3 w-[700px] max-w-[none] -translate-x-1/2 origin-top scale-[0.4] sm:top-4 sm:scale-[0.42]"
+        aria-hidden
+      >
+        <div className="rounded-lg border border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-900/[0.04] dark:border-zinc-700 dark:bg-zinc-50 dark:ring-zinc-900/10">
+          <ResumeLivePreview
+            content={content}
+            title={MOCK_RESUME_TITLE}
+            exportAccess="allowed"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const cardBase =
   "group flex w-full flex-col rounded-2xl border border-zinc-200/90 bg-white/95 p-6 text-left shadow-sm transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/90 dark:hover:border-zinc-600 sm:p-7";
@@ -93,19 +121,10 @@ export function ResumeTemplateStartClient({ resumeId, mode }: Props) {
             {RESUME_TEMPLATES.map((t) => (
               <div
                 key={t.id}
-                className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md shadow-zinc-900/5 ring-1 ring-zinc-900/[0.03] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-lg dark:ring-white/[0.04]"
               >
-                <div
-                  className={`relative h-28 w-full ${t.previewClass}`}
-                  aria-hidden
-                >
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-800 shadow-sm">
-                      Preview
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col p-4 sm:p-5">
+                <TemplateMiniPreview templateId={t.id} />
+                <div className="flex flex-1 flex-col border-t border-zinc-200/90 p-4 sm:p-5 dark:border-zinc-800">
                   <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                     {t.name}
                   </h2>
