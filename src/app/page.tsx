@@ -301,9 +301,6 @@ export default async function Home() {
               >
                 Create your free account
               </Link>
-              <p className="mt-2.5 max-w-lg text-center text-[13px] leading-snug text-zinc-200 sm:text-sm">
-                $1 today, then $9.99/month after 10 days. Cancel anytime.
-              </p>
             </div>
           </div>
         </section>
