@@ -22,11 +22,24 @@ import {
 
 export type AuthFormState = { error?: string };
 
+function registerErrorFields(e: unknown): {
+  name: string;
+  message: string;
+  code?: string;
+} {
+  if (e instanceof Error) {
+    const codeRaw = (e as { code?: string | number }).code;
+    const code =
+      codeRaw !== undefined && codeRaw !== null ? String(codeRaw) : undefined;
+    return { name: e.name, message: e.message, ...(code ? { code } : {}) };
+  }
+  return { name: "non-Error", message: String(e) };
+}
+
 export async function registerAction(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  console.log("[auth:register] action start");
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const nameRaw = String(formData.get("name") ?? "").trim();
@@ -41,33 +54,36 @@ export async function registerAction(
   }
 
   try {
+    console.log("[register] CREATE_START");
     const user = await createUserWithCredentials({
       email,
       password,
       name: nameRaw || undefined,
     });
-    console.log("[auth:register] user created", { userId: user.id });
+    console.log("[register] CREATE_SUCCESS", { userId: user.id });
 
+    console.log("[register] VERIFY_SEND_START");
     const emailSend = await sendVerificationEmailForUserEmail(user.email);
     if (!emailSend.ok) {
-      console.error("[auth:register] verification email failed", emailSend.error);
+      const hint = emailSend.error.slice(0, 160);
+      console.error("[register] VERIFY_SEND_FAILED", { message: hint });
+    } else {
+      console.log("[register] VERIFY_SEND_SUCCESS");
     }
 
     const token = await createDbSession(user.id);
     await setAuthSessionCookie(token);
+    console.log("[register] SESSION_CREATED");
   } catch (e) {
     if (isUniqueConstraintError(e)) {
       console.log("[auth:register] validation fail", { reason: "duplicate_email" });
       return { error: "An account with this email already exists" };
     }
-    console.error(
-      "[auth:register] caught error",
-      e instanceof Error ? e.message : String(e),
-    );
+    console.error("[register] OUTER_ERROR", registerErrorFields(e));
     return { error: "Something went wrong. Please try again." };
   }
 
-  console.log("[auth:register] redirect", { target: "/verify-email" });
+  console.log("[register] REDIRECT_VERIFY_EMAIL");
   redirect("/verify-email");
 }
 
