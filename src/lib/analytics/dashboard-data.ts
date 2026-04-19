@@ -1,5 +1,9 @@
 import type { AnalyticsEventType } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import {
+  prismaCreatedAtFilter,
+  type ResolvedAnalyticsRange,
+} from "@/lib/analytics/date-range";
 
 const ALL_TYPES = [
   "PAGE_VIEW_HOME",
@@ -12,11 +16,19 @@ const ALL_TYPES = [
 
 export type AnalyticsCounts = Record<(typeof ALL_TYPES)[number], number>;
 
-export async function getAnalyticsCounts(): Promise<AnalyticsCounts> {
+export async function getAnalyticsCounts(
+  range: ResolvedAnalyticsRange,
+): Promise<AnalyticsCounts> {
+  const timeFilter = prismaCreatedAtFilter(range);
   const pairs = await Promise.all(
     ALL_TYPES.map(
       async (type) =>
-        [type, await prisma.analyticsEvent.count({ where: { type } })] as const,
+        [
+          type,
+          await prisma.analyticsEvent.count({
+            where: { type, ...timeFilter },
+          }),
+        ] as const,
     ),
   );
   return Object.fromEntries(pairs) as AnalyticsCounts;

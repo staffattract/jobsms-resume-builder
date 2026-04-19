@@ -1,5 +1,9 @@
 import type { AnalyticsEventType } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import {
+  prismaCreatedAtFilter,
+  type ResolvedAnalyticsRange,
+} from "@/lib/analytics/date-range";
 
 /** List prices (USD) aligned with marketing copy; adjust if Stripe amounts change. */
 const ONE_TIME_USD = 4.99;
@@ -16,10 +20,14 @@ function bucketAdId(v: string | null | undefined): string {
   return v && v.length > 0 ? v : "(none)";
 }
 
-export async function getAdCampaignRows(): Promise<AdCampaignRow[]> {
+export async function getAdCampaignRows(
+  range: ResolvedAnalyticsRange,
+): Promise<AdCampaignRow[]> {
+  const userTime = prismaCreatedAtFilter(range);
   const userGroups = await prisma.user.groupBy({
     by: ["adId"],
     _count: { id: true },
+    where: Object.keys(userTime).length > 0 ? userTime : undefined,
   });
 
   const purchaseTypes: AnalyticsEventType[] = [
@@ -27,10 +35,12 @@ export async function getAdCampaignRows(): Promise<AdCampaignRow[]> {
     "PURCHASE_SUBSCRIPTION_SUCCESS",
   ];
 
+  const eventTime = prismaCreatedAtFilter(range);
   const events = await prisma.analyticsEvent.findMany({
     where: {
       type: { in: purchaseTypes },
       userId: { not: null },
+      ...eventTime,
     },
     select: { userId: true, type: true },
   });

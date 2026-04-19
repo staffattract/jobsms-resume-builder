@@ -2,20 +2,40 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AnalyticsDashboardView } from "@/components/admin/AnalyticsDashboardView";
 import { getAdCampaignRows } from "@/lib/analytics/campaign-dashboard";
+import {
+  filterTabFromResolved,
+  resolveAnalyticsRange,
+} from "@/lib/analytics/date-range";
 import { getAnalyticsCounts } from "@/lib/analytics/dashboard-data";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminAnalyticsAuthorized } from "@/lib/auth/admin-access";
 import { adminLogoutAction } from "@/lib/auth/form-actions";
 
-export default async function AdminDashboardPage() {
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams: Promise<{ preset?: string; from?: string; to?: string }>;
+};
+
+export default async function AdminDashboardPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user || !isAdminAnalyticsAuthorized(user.email)) {
     redirect("/admin/login");
   }
 
+  const sp = await searchParams;
+  const range = resolveAnalyticsRange({
+    preset: sp.preset,
+    from: sp.from,
+    to: sp.to,
+  });
+  const activeTab = filterTabFromResolved(range);
+  const customFrom = range.mode === "custom" ? (sp.from ?? "").trim() : "";
+  const customTo = range.mode === "custom" ? (sp.to ?? "").trim() : "";
+
   const [counts, campaigns] = await Promise.all([
-    getAnalyticsCounts(),
-    getAdCampaignRows(),
+    getAnalyticsCounts(range),
+    getAdCampaignRows(range),
   ]);
 
   return (
@@ -54,7 +74,13 @@ export default async function AdminDashboardPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        <AnalyticsDashboardView counts={counts} campaigns={campaigns} />
+        <AnalyticsDashboardView
+          counts={counts}
+          campaigns={campaigns}
+          activeTab={activeTab}
+          customFrom={customFrom}
+          customTo={customTo}
+        />
       </main>
     </div>
   );
