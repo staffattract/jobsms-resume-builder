@@ -1,7 +1,9 @@
 export type ResolvedAnalyticsRange =
   | { mode: "all" }
   | { mode: "rolling"; start: Date; end: Date; days: 7 | 30 | 90 }
-  | { mode: "custom"; start: Date; end: Date };
+  | { mode: "custom"; start: Date; end: Date }
+  | { mode: "today"; start: Date; end: Date }
+  | { mode: "yesterday"; start: Date; end: Date };
 
 export type AnalyticsRangeQuery = {
   preset?: string;
@@ -15,6 +17,42 @@ function rollingEnd(): Date {
 
 function rollingStart(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
+function startOfUtcDayContaining(d: Date): Date {
+  return new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0),
+  );
+}
+
+function endOfUtcDayContaining(d: Date): Date {
+  return new Date(
+    Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
+}
+
+/** UTC calendar day containing “now”, from midnight UTC through current instant. */
+function utcTodayWindow(): { start: Date; end: Date } {
+  const end = rollingEnd();
+  return { start: startOfUtcDayContaining(end), end };
+}
+
+/** Full UTC calendar day immediately before today. */
+function utcYesterdayWindow(): { start: Date; end: Date } {
+  const ref = new Date();
+  ref.setUTCDate(ref.getUTCDate() - 1);
+  return {
+    start: startOfUtcDayContaining(ref),
+    end: endOfUtcDayContaining(ref),
+  };
 }
 
 function parseYmdUtcBounds(
@@ -60,6 +98,14 @@ export function resolveAnalyticsRange(
   if (preset === "all") {
     return { mode: "all" };
   }
+  if (preset === "today") {
+    const { start, end } = utcTodayWindow();
+    return { mode: "today", start, end };
+  }
+  if (preset === "yesterday") {
+    const { start, end } = utcYesterdayWindow();
+    return { mode: "yesterday", start, end };
+  }
   if (preset === "7d" || preset === "7") {
     return { mode: "rolling", start: rollingStart(7), end: rollingEnd(), days: 7 };
   }
@@ -82,7 +128,14 @@ export function prismaCreatedAtFilter(
   return { createdAt: { gte: range.start, lte: range.end } };
 }
 
-export type AnalyticsFilterTab = "7d" | "30d" | "90d" | "all" | "custom";
+export type AnalyticsFilterTab =
+  | "today"
+  | "yesterday"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "all"
+  | "custom";
 
 export function filterTabFromResolved(
   resolved: ResolvedAnalyticsRange,
@@ -90,14 +143,22 @@ export function filterTabFromResolved(
   if (resolved.mode === "custom") {
     return "custom";
   }
+  if (resolved.mode === "today") {
+    return "today";
+  }
+  if (resolved.mode === "yesterday") {
+    return "yesterday";
+  }
   if (resolved.mode === "all") {
     return "all";
   }
-  if (resolved.days === 7) {
-    return "7d";
+  if (resolved.mode === "rolling") {
+    if (resolved.days === 7) {
+      return "7d";
+    }
+    if (resolved.days === 90) {
+      return "90d";
+    }
+    return "30d";
   }
-  if (resolved.days === 90) {
-    return "90d";
-  }
-  return "30d";
 }

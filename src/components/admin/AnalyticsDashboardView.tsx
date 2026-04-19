@@ -115,6 +115,18 @@ export function AnalyticsDashboardView({
         </h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
+            href="/admin/dashboard?preset=today"
+            className={`${presetBtnBase} ${activeTab === "today" ? presetActive : presetInactive}`}
+          >
+            Today
+          </Link>
+          <Link
+            href="/admin/dashboard?preset=yesterday"
+            className={`${presetBtnBase} ${activeTab === "yesterday" ? presetActive : presetInactive}`}
+          >
+            Yesterday
+          </Link>
+          <Link
             href="/admin/dashboard?preset=7d"
             className={`${presetBtnBase} ${activeTab === "7d" ? presetActive : presetInactive}`}
           >
@@ -155,7 +167,7 @@ export function AnalyticsDashboardView({
                 setCustomError(null);
                 setFrom(e.target.value);
               }}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 shadow-inner focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-600/40"
+              className="min-h-[2.75rem] w-full appearance-auto rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 shadow-inner scheme-dark focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-600/40"
             />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-[11rem]">
@@ -173,7 +185,7 @@ export function AnalyticsDashboardView({
                 setCustomError(null);
                 setTo(e.target.value);
               }}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 shadow-inner focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-600/40"
+              className="min-h-[2.75rem] w-full appearance-auto rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 shadow-inner scheme-dark focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-600/40"
             />
           </div>
           <button
