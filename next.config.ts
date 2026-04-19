@@ -7,7 +7,13 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: projectRoot,
-  serverExternalPackages: ["puppeteer", "pg", "@prisma/adapter-pg"],
+  serverExternalPackages: [
+    "puppeteer",
+    "puppeteer-core",
+    "@sparticuz/chromium",
+    "pg",
+    "@prisma/adapter-pg",
+  ],
 };
 
 export default nextConfig;
