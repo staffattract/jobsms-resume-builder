@@ -1,13 +1,14 @@
 "use client";
 
+import { ResumeCtaHelpTooltip } from "@/components/resumes/ResumeCtaHelpTooltip";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 const accept =
   ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-const btnClass =
-  "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-zinc-800 sm:w-auto";
+const btnMin =
+  "min-h-[52px] w-full rounded-xl px-4 py-3 pr-11 text-sm font-semibold";
 
 export function UploadResumeButton() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +48,7 @@ export function UploadResumeButton() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto">
+    <div className="relative flex min-h-[52px] min-w-0 flex-col">
       <input
         ref={inputRef}
         type="file"
@@ -60,36 +61,24 @@ export function UploadResumeButton() {
       />
       <button
         type="button"
-        className={btnClass}
+        className={`${btnMin} flex cursor-pointer items-center justify-center border border-black bg-white text-black shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-white dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900`}
         disabled={busy}
         onClick={() => inputRef.current?.click()}
       >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          aria-hidden
-        >
-          <path d="M12 15V3m0 0L8 7m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
-          <path
-            d="M2 17a4 4 0 004 4h12a4 4 0 000-8h-1.5M6 21v-2a2 2 0 012-2h8a2 2 0 012 2v2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        {busy ? "Processing your resume…" : "Upload resume & improve with AI"}
+        {busy ? "Processing your resume…" : "Upload Resume"}
       </button>
+      <ResumeCtaHelpTooltip
+        ariaLabel="Upload resume help"
+        text="Upload a resume and our AI will make it better."
+      />
       {error ? (
-        <p className="text-center text-sm text-red-600 dark:text-red-400 sm:text-left" role="alert">
+        <p
+          className="mt-2 text-center text-sm text-red-600 dark:text-red-400 sm:text-left"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
-      <p className="text-center text-xs text-zinc-500 dark:text-zinc-500 sm:text-left">
-        PDF or DOCX, max 5 MB. We extract text, improve it with AI, then open the editor.
-      </p>
     </div>
   );
 }
