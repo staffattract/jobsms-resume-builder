@@ -277,10 +277,7 @@ export default async function Home() {
                 <p className="mx-auto mt-3 max-w-sm text-sm font-medium leading-relaxed text-zinc-300 sm:text-base">
                   Start Creating Your Resume with a Free Account. No CC Required to Sign Up.
                 </p>
-                <p className="mt-5 text-3xl font-bold tracking-tight text-white sm:mt-6 sm:text-4xl">
-                  $1<span className="text-xl font-semibold text-zinc-400 sm:text-2xl"> today</span>
-                </p>
-                <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left text-sm text-zinc-300">
+                <ul className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-sm text-zinc-300 sm:mt-6">
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
                     Download instantly after starting a $1 - 10 Day Trial
