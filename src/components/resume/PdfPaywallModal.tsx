@@ -90,6 +90,7 @@ export function PdfPaywallModal({ open, onClose }: Props) {
   }
 
   const valueBullets = [
+    "Unlimited Edits & Downloads",
     "Clean, professional formatting",
     "Optimized for recruiters & ATS",
     "Ready to send immediately",
