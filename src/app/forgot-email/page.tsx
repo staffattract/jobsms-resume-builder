@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PublicFooter } from "@/components/marketing/PublicFooter";
 
 export const metadata: Metadata = {
   title: "Forgot email?",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ForgotEmailPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3 sm:px-6">
           <Link
@@ -26,7 +27,7 @@ export default function ForgotEmailPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 text-center shadow-2xl shadow-black/40 ring-1 ring-white/[0.05] sm:p-8">
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Forgot which email you used?
@@ -53,6 +54,8 @@ export default function ForgotEmailPage() {
           </p>
         </div>
       </div>
+
+      <PublicFooter />
     </div>
   );
 }

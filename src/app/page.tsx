@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -38,7 +39,7 @@ export default async function Home() {
   const appHref = user ? "/resumes" : "/register";
 
   return (
-    <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <span className="text-sm font-semibold tracking-tight text-white">
@@ -72,7 +73,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <main>
+      <main className="flex flex-1 flex-col">
         {/* Hero */}
         <section className="border-b border-zinc-800/80 bg-gradient-to-b from-black via-zinc-950 to-zinc-950 px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-12 sm:pt-12">
           <div className="mx-auto max-w-4xl">
@@ -374,9 +375,7 @@ export default async function Home() {
           </Link>
         </section>
 
-        <footer className="border-t border-zinc-900 py-5 text-center text-xs text-zinc-600">
-          <p>© {new Date().getFullYear()} Resume builder</p>
-        </footer>
+        <PublicFooter />
       </main>
     </div>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default async function LoginPage({
     resetVal === "success" || resetVal === "1" || resetVal === "true";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-black via-zinc-950 to-zinc-950 font-sans text-zinc-100 antialiased">
       <header className="border-b border-zinc-800/90 bg-black/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3 sm:px-6">
           <Link
@@ -37,7 +38,7 @@ export default async function LoginPage({
         </div>
       </header>
 
-      <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Sign in to continue
@@ -71,6 +72,8 @@ export default async function LoginPage({
           </Link>
         </p>
       </div>
+
+      <PublicFooter />
     </div>
   );
 }
