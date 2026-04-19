@@ -118,9 +118,6 @@ export function PdfPaywallModal({ open, onClose }: Props) {
           >
             Your resume is ready
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
-            $1 today, then $9.99/month after 10 days. Cancel anytime.
-          </p>
         </div>
 
         {/* Preview: finished document, partially obscured */}
@@ -179,28 +176,22 @@ export function PdfPaywallModal({ open, onClose }: Props) {
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950 shadow-sm">
               Resume Pro
             </span>
-            <h3 className="mt-3 text-sm font-semibold text-white sm:text-base">
-              Start your $1 trial
-            </h3>
-            <p className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              $1 today
-            </p>
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-zinc-300">
-              Then $9.99/month after 10 days. Cancel anytime.
-            </p>
-            <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-zinc-500">
+            <p className="mx-auto mt-4 max-w-sm text-xs leading-relaxed text-zinc-500 sm:mt-5">
               Download instantly after checkout. Unlimited PDFs while subscribed.
               Recurring billing begins after your 10-day intro unless you cancel in the
               billing portal.
             </p>
             <button
               type="button"
-              className="mt-5 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50 sm:py-4 sm:text-base"
+              className="mt-5 w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg transition hover:bg-emerald-400 disabled:opacity-50 sm:mt-6 sm:py-4 sm:text-base"
               disabled={redirecting}
               onClick={() => void startSubscriptionCheckout()}
             >
               {redirecting ? "Redirecting…" : "Start $1 Trial & Download"}
             </button>
+            <p className="mx-auto mt-3 max-w-xs text-center text-xs leading-relaxed text-zinc-500">
+              Then $9.99/month after 10 days. Cancel anytime.
+            </p>
           </div>
         </div>
 
