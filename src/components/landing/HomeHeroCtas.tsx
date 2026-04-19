@@ -17,7 +17,7 @@ export function HomeHeroCtas({ appHref, btnPrimary, btnSecondary }: Props) {
         className={btnPrimary}
         onClick={() => trackClientAnalyticsEvent("START_BUILDING_CLICK")}
       >
-        Start your $1 trial
+        Create Your Resume Now
       </Link>
       <a
         href="#pricing"

@@ -86,8 +86,8 @@ export default async function Home() {
               Stop Getting Ignored by Employers
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-zinc-400 sm:mt-5 sm:text-lg">
-              Build a recruiter-ready, ATS-friendly resume with AI — then download a
-              polished PDF instantly.
+              Create a free account and start building immediately — no credit card to
+              sign up. Polish your resume with AI, then export when you&apos;re ready.
             </p>
 
             <div className="mx-auto mt-8 max-w-4xl text-left" aria-hidden>
@@ -166,7 +166,7 @@ export default async function Home() {
                           Export
                         </div>
                         <div className="text-[10px] font-semibold text-zinc-900">
-                          $1 trial
+                          PDF
                         </div>
                       </div>
                     </div>
@@ -269,13 +269,16 @@ export default async function Home() {
             <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Simple pricing
             </h2>
+            <p className="mx-auto mt-4 max-w-xl text-center text-sm font-medium leading-relaxed text-zinc-300 sm:text-base">
+              Start Creating Your Resume with a Free Account. No CC Required to Sign Up.
+            </p>
             <div className="mx-auto mt-8 max-w-lg">
               <div className="relative rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-b from-emerald-950/50 to-zinc-900 p-6 text-center shadow-xl shadow-emerald-950/20 sm:p-8">
                 <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950">
                   Resume Pro
                 </span>
                 <h3 className="mt-3 text-lg font-semibold text-white sm:text-xl">
-                  Start your $1 trial
+                  When you&apos;re ready to export
                 </h3>
                 <p className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   $1<span className="text-xl font-semibold text-zinc-400 sm:text-2xl"> today</span>
@@ -286,7 +289,7 @@ export default async function Home() {
                 <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left text-sm text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
-                    Download instantly after checkout
+                    Download instantly after starting a $1 - 10 Day Trial
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-400">✓</span>
@@ -305,7 +308,7 @@ export default async function Home() {
                 href="/register"
                 className={`${btnPrimary} w-full px-8 py-4 text-base font-semibold shadow-xl shadow-black/35 sm:w-auto sm:min-w-[280px]`}
               >
-                Start your $1 trial
+                Create your free account
               </Link>
               <p className="mt-2.5 max-w-lg text-center text-[13px] leading-snug text-zinc-200 sm:text-sm">
                 $1 today, then $9.99/month after 10 days. Cancel anytime.
