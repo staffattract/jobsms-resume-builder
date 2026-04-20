@@ -155,7 +155,10 @@ export function ResumeLivePreview({
                     : "mt-4 text-[0.65rem] font-medium uppercase tracking-wider text-zinc-400"
                 }
               >
-                {tpl.name} · Live preview
+                LIVE PREVIEW
+                <span className="block mt-1 normal-case tracking-normal text-[0.7rem] text-zinc-500">
+                  PDF export requires a plan
+                </span>
               </p>
             </header>
 
@@ -459,18 +462,14 @@ export function ResumeLivePreview({
                       Preview locked
                     </p>
                     <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      Export a polished PDF anytime
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                      Start for $1 today — download instantly, then $9.99/month after 10
-                      days. Cancel anytime.
+                      Export a polished PDF anytime.
                     </p>
                     <button
                       type="button"
                       onClick={onUnlockClick}
                       className="mt-4 w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.99] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                     >
-                      Start $1 trial
+                      Unlock PDF export
                     </button>
                   </div>
                 )}
