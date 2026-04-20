@@ -19,6 +19,8 @@ import {
   createUserWithCredentials,
   isUniqueConstraintError,
 } from "@/lib/auth/users";
+import { CAMPAIGN_AD_ID_COOKIE } from "@/lib/tracking/campaign-cookie";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 
 export type AuthFormState = { error?: string };
 
@@ -40,10 +42,29 @@ export async function registerAction(
   }
 
   try {
+    const store = await cookies();
+    const cookieAdId = store.get(CAMPAIGN_AD_ID_COOKIE)?.value?.trim();
+    const adIdRaw = (cookieAdId || "").slice(0, 500);
+    const adId =
+      adIdRaw && /^[a-zA-Z0-9_-]+$/.test(adIdRaw) && adIdRaw.length <= 128
+        ? adIdRaw
+        : undefined;
+
     const user = await createUserWithCredentials({
       email,
       password,
       name: nameRaw || undefined,
+      adId,
+    });
+
+    await recordAnalyticsEvent({
+      type: "REGISTRATION_CREATED",
+      userId: user.id,
+      metadata: {
+        userId: user.id,
+        ad_id: user.adId ?? null,
+        timestamp: new Date().toISOString(),
+      },
     });
 
     const emailSend = await sendVerificationEmailForUserEmail(user.email);

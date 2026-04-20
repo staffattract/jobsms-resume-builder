@@ -95,6 +95,8 @@ export function AnalyticsDashboardView({
   const startClicks = c.START_BUILDING_CLICK;
   const pricingClicks = c.SEE_PRICING_CLICK;
   const downloadClicks = c.DOWNLOAD_PDF_CLICK;
+  const registrations = c.REGISTRATION_CREATED;
+  const confirmationEmailClicks = c.EMAIL_CONFIRMATION_CLICKED;
   const oneTime = c.PURCHASE_ONE_TIME_SUCCESS;
   const subscription = c.PURCHASE_SUBSCRIPTION_SUCCESS;
   const paidTotal = oneTime + subscription;
@@ -216,6 +218,8 @@ export function AnalyticsDashboardView({
           <StatCard label="Start Building clicks" value={startClicks} />
           <StatCard label="See Pricing clicks" value={pricingClicks} />
           <StatCard label="Download PDF clicks" value={downloadClicks} />
+          <StatCard label="Registrations" value={registrations} />
+          <StatCard label="Confirmation email clicks" value={confirmationEmailClicks} />
           <StatCard label="Standalone PDF purchases" value={oneTime} />
           <StatCard label="Subscription purchases" value={subscription} />
         </div>
@@ -243,16 +247,18 @@ export function AnalyticsDashboardView({
         </h2>
         <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500">
           Users = signups with stored <code className="text-zinc-400">ad_id</code> in
-          the selected range. Purchases / revenue from analytics events × placeholder
-          amounts (standalone PDF + $9.99 per subscription success); $1 intro trial
-          charges are not modeled here.
+          the selected range. Registrations, confirmation clicks, purchases, and
+          revenue use analytics events in the selected range; revenue uses placeholder
+          amounts (standalone PDF + $9.99 per subscription success).
         </p>
         <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
-          <table className="w-full min-w-[420px] text-left text-sm text-zinc-200">
+          <table className="w-full min-w-[720px] text-left text-sm text-zinc-200">
             <thead className="border-b border-zinc-800 bg-zinc-900/80 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-3">ad_id</th>
                 <th className="px-4 py-3 text-right">Users</th>
+                <th className="px-4 py-3 text-right">Registrations</th>
+                <th className="px-4 py-3 text-right">Confirmation clicks</th>
                 <th className="px-4 py-3 text-right">Purchases</th>
                 <th className="px-4 py-3 text-right">Revenue</th>
               </tr>
@@ -261,7 +267,7 @@ export function AnalyticsDashboardView({
               {campaigns.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={6}
                     className="px-4 py-6 text-center text-zinc-500"
                   >
                     No campaign data yet.
@@ -277,6 +283,12 @@ export function AnalyticsDashboardView({
                       {row.adId}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.users}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {row.registrations}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {row.confirmationEmailClicks}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums">
                       {row.purchases}
                     </td>

@@ -5,6 +5,7 @@ import {
   buildConfirmEmailUrl,
   sendEmailVerificationEmail,
 } from "@/lib/email/resend-send";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { generatePasswordResetToken } from "@/lib/auth/reset-token";
 import { findUserByEmail, normalizeEmail } from "@/lib/auth/users";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -132,6 +133,17 @@ export async function confirmEmailAction(
     await tx.emailVerificationToken.deleteMany({
       where: { email: row.email },
     });
+  });
+
+  await recordAnalyticsEvent({
+    type: "EMAIL_CONFIRMATION_CLICKED",
+    userId: user.id,
+    metadata: {
+      userId: user.id,
+      email: user.email,
+      ad_id: user.adId ?? null,
+      timestamp: new Date().toISOString(),
+    },
   });
 
   return { succeeded: true };
