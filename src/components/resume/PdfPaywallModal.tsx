@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -30,30 +30,11 @@ function CheckIcon({ className }: { className?: string }) {
 export function PdfPaywallModal({ open, onClose }: Props) {
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tidioHandledForOpenRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
       setRedirecting(false);
       setError(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      tidioHandledForOpenRef.current = false;
-      return;
-    }
-    if (tidioHandledForOpenRef.current) {
-      return;
-    }
-    tidioHandledForOpenRef.current = true;
-
-    if (typeof window !== "undefined" && (window as any).tidioChatApi) {
-      (window as any).tidioChatApi.open();
-      (window as any).tidioChatApi.messageFromOperator(
-        "You're one step away from downloading. Want help improving your resume first?",
-      );
     }
   }, [open]);
 
@@ -210,6 +191,10 @@ export function PdfPaywallModal({ open, onClose }: Props) {
             </button>
             <p className="mx-auto mt-3 max-w-xs text-center text-xs leading-relaxed text-zinc-500">
               Then $9.99/month after 10 days. Cancel anytime.
+            </p>
+            <p className="mx-auto mt-2 max-w-xs text-center text-[11px] leading-relaxed text-zinc-500">
+              Want help improving your resume first? Use the chat in the
+              bottom-right.
             </p>
           </div>
         </div>
