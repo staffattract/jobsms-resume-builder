@@ -359,7 +359,7 @@ export function ResumeEditorShell({
             {exportAccess === "pending"
               ? "Verifying export access…"
               : exportAccess === "denied"
-                ? "PDF export requires a plan — $1 today, then $9.99/mo after 10 days"
+                ? "PDF export requires a plan"
                 : "Updates as you type"}
           </p>
         </div>
