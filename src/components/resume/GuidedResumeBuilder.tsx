@@ -19,8 +19,12 @@ import {
   type GuidedScreen,
 } from "@/lib/builder/guided-cursor";
 import { newId } from "@/lib/id";
+import { upsertGuidedBuildResume } from "@/lib/resume/actions";
 import {
-  defaultDraftTitle,
+  deriveResumeListTitle,
+  hasMeaningfulBuildContent,
+} from "@/lib/resume/derive-resume-list-title";
+import {
   saveLocalResumeDraft,
   type PublicBuilderUi,
 } from "@/lib/resume/local-draft";
@@ -32,6 +36,7 @@ import {
 } from "@/lib/resume/types";
 
 const AUTOSAVE_MS = 500;
+const SERVER_AUTOSAVE_MS = 800;
 const SAVED_MSG_MS = 2000;
 
 type SaveS = "idle" | "saving" | "saved";
@@ -41,6 +46,10 @@ type Props = {
   initialScreen: GuidedScreen;
   onStartOver: () => void;
   storageKey: string;
+  /** When true, debounced server save + optional “save to account” banner. */
+  isLoggedIn?: boolean;
+  /** Server `Resume.id` linked to this draft (from localStorage). */
+  initialLinkedResumeId?: string | null;
 };
 
 function tr(s: string | undefined): string {
@@ -100,18 +109,6 @@ function withEdu(
   }
   items[idx] = map({ ...items[idx]! });
   return { ...c, education: { items } };
-}
-
-function docTitle(c: ResumeContent): string {
-  if (tr(c.target.jobTitle)) {
-    const j = tr(c.target.jobTitle);
-    return j.length > 88 ? `${j.slice(0, 85)}…` : j;
-  }
-  if (tr(c.contact.fullName)) {
-    const n = tr(c.contact.fullName);
-    return n.length > 70 ? `${n.slice(0, 67)}…` : n;
-  }
-  return defaultDraftTitle();
 }
 
 function mainQuestion(screen: GuidedScreen): { text: string; optional?: true } {
@@ -288,9 +285,14 @@ export function GuidedResumeBuilder({
   initialScreen,
   onStartOver,
   storageKey,
+  isLoggedIn = false,
+  initialLinkedResumeId = null,
 }: Props) {
   const [content, setContent] = useState<ResumeContent>(initialContent);
   const [screen, setScreen] = useState<GuidedScreen>(initialScreen);
+  const [linkedResumeId, setLinkedResumeId] = useState<string | null>(
+    () => initialLinkedResumeId ?? null,
+  );
   const [saveState, setSaveS] = useState<SaveS>("idle");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
@@ -310,6 +312,11 @@ export function GuidedResumeBuilder({
   const tmr = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevJ = useRef<string>("");
   const prevE = useRef<string>("");
+  const resumeIdRef = useRef<string | null>(initialLinkedResumeId ?? null);
+  const serverLockRef = useRef(false);
+  useEffect(() => {
+    resumeIdRef.current = linkedResumeId;
+  }, [linkedResumeId]);
 
   const fetchE = useCallback(async () => {
     try {
@@ -395,6 +402,35 @@ export function GuidedResumeBuilder({
     }
   }, [screen]);
 
+  const syncToServer = useCallback(async () => {
+    if (!isLoggedIn) {
+      return;
+    }
+    if (serverLockRef.current) {
+      return;
+    }
+    serverLockRef.current = true;
+    try {
+      const id = await upsertGuidedBuildResume(resumeIdRef.current, content);
+      resumeIdRef.current = id;
+      setLinkedResumeId(id);
+    } catch {
+      // Network / auth: keep local draft; user can retry with banner or next debounced save
+    } finally {
+      serverLockRef.current = false;
+    }
+  }, [isLoggedIn, content]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    const t = setTimeout(() => {
+      void syncToServer();
+    }, SERVER_AUTOSAVE_MS);
+    return () => clearTimeout(t);
+  }, [isLoggedIn, content, screen, syncToServer]);
+
   const doSave = useCallback(() => {
     const x = ++g.current;
     setSaveS("saving");
@@ -407,7 +443,16 @@ export function GuidedResumeBuilder({
       ...(jIdx !== undefined ? { jobIndex: jIdx } : {}),
       ...(eIdx !== undefined ? { educationIndex: eIdx } : {}),
     };
-    saveLocalResumeDraft({ title: docTitle(content), content, ui }, storageKey);
+    const title = deriveResumeListTitle(content);
+    saveLocalResumeDraft(
+      {
+        title,
+        content,
+        ui,
+        ...(linkedResumeId ? { linkedResumeId } : {}),
+      },
+      storageKey,
+    );
     if (x !== g.current) {
       return;
     }
@@ -419,7 +464,7 @@ export function GuidedResumeBuilder({
       setSaveS("idle");
       tmr.current = null;
     }, SAVED_MSG_MS);
-  }, [content, screen, storageKey]);
+  }, [content, screen, storageKey, linkedResumeId]);
 
   useEffect(() => {
     const t = setTimeout(doSave, AUTOSAVE_MS);
@@ -594,6 +639,8 @@ export function GuidedResumeBuilder({
 
   const mq = mainQuestion(screen);
   const pl = progressLine(screen);
+  const showSaveToAccountBanner =
+    isLoggedIn && !linkedResumeId && hasMeaningfulBuildContent(content);
 
   return (
     <div className="space-y-6">
@@ -620,6 +667,22 @@ export function GuidedResumeBuilder({
         <p className="text-sm font-medium text-red-600 dark:text-red-400" role="alert">
           {aiErr}
         </p>
+      ) : null}
+
+      {showSaveToAccountBanner ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200/90 bg-sky-50/80 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-sky-900/50 dark:bg-sky-950/30">
+          <p className="text-sm text-zinc-800 dark:text-zinc-200">
+            This draft is not in your Resumes list yet. You can add it to your account below.
+          </p>
+          <button
+            type="button"
+            className={`${btnPrimary} shrink-0`}
+            onClick={() => void syncToServer()}
+            disabled={aiBusy}
+          >
+            Save this resume to your account
+          </button>
+        </div>
       ) : null}
 
       {interview && (
@@ -656,7 +719,7 @@ export function GuidedResumeBuilder({
           <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
             <ResumeLivePreview
               content={content}
-              title={docTitle(content)}
+              title={deriveResumeListTitle(content)}
               exportAccess={ex}
               onUnlockClick={() => {}}
             />

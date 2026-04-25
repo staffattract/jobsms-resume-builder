@@ -21,7 +21,7 @@ export default async function BuildPage() {
             <p className="py-20 text-center text-sm text-zinc-500">Loading…</p>
           }
         >
-          <PublicResumeBuilderClient />
+          <PublicResumeBuilderClient isLoggedIn={user !== null} />
         </Suspense>
       </div>
     </div>

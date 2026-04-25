@@ -25,6 +25,8 @@ export type LocalResumeDraft = {
   content: ResumeContent;
   /** Guided interview position (optional for older local drafts). */
   ui?: PublicBuilderUi;
+  /** When set, `/build` autosave also updates this Postgres `Resume` row. */
+  linkedResumeId?: string;
 };
 
 function safeParse(json: string): unknown {
@@ -80,6 +82,11 @@ export function loadLocalResumeDraft(
       ui = { phase: u.phase, stepIndex: u.stepIndex };
     }
   }
+  const linkedResumeId =
+    typeof o.linkedResumeId === "string" && o.linkedResumeId.trim()
+      ? o.linkedResumeId.trim()
+      : undefined;
+
   return {
     title,
     content: {
@@ -87,6 +94,7 @@ export function loadLocalResumeDraft(
       meta: { ...content.meta, templateSelectionComplete: true },
     },
     ...(ui ? { ui } : {}),
+    ...(linkedResumeId ? { linkedResumeId } : {}),
   };
 }
 
@@ -104,6 +112,7 @@ export function saveLocalResumeDraft(
         title: draft.title,
         content: draft.content,
         ...(draft.ui ? { ui: draft.ui } : {}),
+        ...(draft.linkedResumeId ? { linkedResumeId: draft.linkedResumeId } : {}),
       }),
     );
   } catch {

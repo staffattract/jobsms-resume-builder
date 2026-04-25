@@ -46,7 +46,11 @@ function resolveScreenFromDraft(ui: {
   return defaultScreen();
 }
 
-export function PublicResumeBuilderClient() {
+type PublicResumeBuilderClientProps = {
+  isLoggedIn?: boolean;
+};
+
+export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBuilderClientProps) {
   const searchParams = useSearchParams();
   const uploadIntent = searchParams.get("upload") === "1";
 
@@ -54,6 +58,7 @@ export function PublicResumeBuilderClient() {
   const [flow, setFlow] = useState<Flow>("start");
   const [initialContent, setInitialContent] = useState<ResumeContent>(defaultResumeContent);
   const [initialScreen, setInitialScreen] = useState<GuidedScreen>(defaultScreen);
+  const [initialLinkedResumeId, setInitialLinkedResumeId] = useState<string | null>(null);
   const [mountKey, setMountKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +67,7 @@ export function PublicResumeBuilderClient() {
     const d = loadLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
     if (d) {
       setInitialContent(d.content);
+      setInitialLinkedResumeId(d.linkedResumeId ?? null);
       if (d.ui?.phase === "interview" || d.ui?.phase === "done") {
         setFlow("guided");
         setInitialScreen(resolveScreenFromDraft(d.ui));
@@ -69,6 +75,8 @@ export function PublicResumeBuilderClient() {
         setFlow("guided");
         setInitialScreen(defaultScreen());
       }
+    } else {
+      setInitialLinkedResumeId(null);
     }
     setBooted(true);
   }, []);
@@ -102,6 +110,7 @@ export function PublicResumeBuilderClient() {
           meta: { ...next.meta, templateSelectionComplete: true },
         });
         setInitialScreen(defaultScreen());
+        setInitialLinkedResumeId(null);
         setMountKey((k) => k + 1);
         setFlow("guided");
       } catch {
@@ -116,6 +125,7 @@ export function PublicResumeBuilderClient() {
   const onStartGuided = useCallback(() => {
     setInitialContent(defaultResumeContent());
     setInitialScreen(defaultScreen());
+    setInitialLinkedResumeId(null);
     setMountKey((k) => k + 1);
     setFlow("guided");
     setError(null);
@@ -125,6 +135,7 @@ export function PublicResumeBuilderClient() {
     clearLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
     setInitialContent(defaultResumeContent());
     setInitialScreen(defaultScreen());
+    setInitialLinkedResumeId(null);
     setFlow("start");
     setError(null);
   }, []);
@@ -153,6 +164,8 @@ export function PublicResumeBuilderClient() {
           initialScreen={initialScreen}
           onStartOver={onStartOver}
           storageKey={LOCAL_RESUME_DRAFT_KEY}
+          isLoggedIn={isLoggedIn}
+          initialLinkedResumeId={initialLinkedResumeId}
         />
       )}
     </div>

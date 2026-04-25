@@ -9,6 +9,7 @@ import {
   coerceResumeTemplateId,
   isValidResumeTemplateId,
 } from "@/lib/resume/templates/registry";
+import { deriveResumeListTitle } from "@/lib/resume/derive-resume-list-title";
 import {
   defaultResumeContent,
   normalizeResumeContent,
@@ -116,4 +117,41 @@ export async function updateResumeContent(resumeId: string, content: ResumeConte
       schemaVersion: 1,
     },
   });
+}
+
+/**
+ * Creates or updates the resume for the public `/build` flow when the user is
+ * signed in. If `resumeId` is set but not found for this user, a new row is
+ * created (e.g. stale id from another account or deleted doc).
+ */
+export async function upsertGuidedBuildResume(
+  resumeId: string | null,
+  content: ResumeContent,
+): Promise<string> {
+  const user = await requireUser();
+  const title = deriveResumeListTitle(content);
+  const json = content as unknown as Prisma.InputJsonValue;
+
+  if (resumeId) {
+    const existing = await prisma.resume.findFirst({
+      where: { id: resumeId, userId: user.id },
+    });
+    if (existing) {
+      await prisma.resume.update({
+        where: { id: resumeId, userId: user.id },
+        data: { content: json, schemaVersion: 1, title },
+      });
+      return resumeId;
+    }
+  }
+
+  const created = await prisma.resume.create({
+    data: {
+      userId: user.id,
+      content: json,
+      schemaVersion: 1,
+      title,
+    },
+  });
+  return created.id;
 }
