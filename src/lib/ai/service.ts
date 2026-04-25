@@ -1,7 +1,9 @@
 import type { AIProvider, ChatMessage } from "@/lib/ai/types";
 import { createOpenAIProviderFromEnv } from "@/lib/ai/openai-provider";
+import { mergePartialFill, canRunPartialAiFill } from "@/lib/builder/merge-partial-fill";
 import {
   ASSISTANT_STYLE,
+  fillPartialResumeUserPrompt,
   generateSummaryUserPrompt,
   improveBulletUserPrompt,
   scratchBuildUserPrompt,
@@ -169,4 +171,28 @@ export async function generateScratchResumeContent(
     },
   };
   return out;
+}
+
+export async function fillPartialResumeFromAi(
+  provider: AIProvider,
+  user: ResumeContent,
+): Promise<ResumeContent> {
+  if (!canRunPartialAiFill(user)) {
+    throw new Error("Add a target job title or some work experience first.");
+  }
+  const j = JSON.stringify(user);
+  const clipped = truncate(j, MAX_RESUME_JSON_CHARS);
+  const raw = await run(
+    provider,
+    fillPartialResumeUserPrompt(clipped),
+    0.3,
+  );
+  let parsed: unknown;
+  try {
+    parsed = parseUploadResumeJson(raw);
+  } catch {
+    throw new Error("Could not parse AI response as resume JSON");
+  }
+  const aiNorm = ensureAllResumeIds(normalizeResumeContent(parsed));
+  return mergePartialFill(user, aiNorm);
 }

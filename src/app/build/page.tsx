@@ -1,10 +1,11 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PublicResumeBuilderClient } from "@/components/resume/PublicResumeBuilderClient";
 
 export const metadata: Metadata = {
   title: "Build your resume",
   description:
-    "Start from scratch with AI or upload an existing resume — no sign-in required. Your work stays in this browser until you are ready to export or save.",
+    "Guided interview for resumeblues.com — one question at a time, with AI and preview. No sign-in. Saved in your browser; PDF export for signed-in customers.",
 };
 
 export default function BuildPage() {
@@ -24,7 +25,13 @@ export default function BuildPage() {
         </div>
       </header>
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        <PublicResumeBuilderClient />
+        <Suspense
+          fallback={
+            <p className="py-20 text-center text-sm text-zinc-500">Loading…</p>
+          }
+        >
+          <PublicResumeBuilderClient />
+        </Suspense>
       </div>
     </div>
   );

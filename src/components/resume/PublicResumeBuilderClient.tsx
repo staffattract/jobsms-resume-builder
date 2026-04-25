@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ResumeEditorShell } from "@/components/resume/ResumeEditorShell";
+import { useSearchParams } from "next/navigation";
+import { GuidedResumeBuilder } from "@/components/resume/GuidedResumeBuilder";
 import { ResumeBuilderStartView } from "@/components/resume/ResumeBuilderStartView";
 import {
   defaultResumeContent,
@@ -12,81 +13,39 @@ import {
   LOCAL_RESUME_DRAFT_KEY,
   clearLocalResumeDraft,
   loadLocalResumeDraft,
-  defaultDraftTitle,
 } from "@/lib/resume/local-draft";
-import { PUBLIC_BUILDER_RESUME_ID } from "@/lib/builder/public-ai";
 
-type Phase = "start" | "editor";
+type Flow = "start" | "guided";
 
 export function PublicResumeBuilderClient() {
+  const searchParams = useSearchParams();
+  const uploadIntent = searchParams.get("upload") === "1";
+
   const [booted, setBooted] = useState(false);
-  const [phase, setPhase] = useState<Phase>("start");
-  const [editorKey, setEditorKey] = useState(0);
-  const [title, setTitle] = useState(() => defaultDraftTitle());
-  const [content, setContent] = useState<ResumeContent>(defaultResumeContent);
+  const [flow, setFlow] = useState<Flow>("start");
+  const [initialContent, setInitialContent] = useState<ResumeContent>(defaultResumeContent);
+  const [initialStep, setInitialStep] = useState(0);
+  const [initialSub, setInitialSub] = useState<"interview" | "done">("interview");
+  const [mountKey, setMountKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const d = loadLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
     if (d) {
-      setTitle(d.title);
-      setContent(d.content);
-      setPhase("editor");
+      setInitialContent(d.content);
+      if (d.ui?.phase === "interview" || d.ui?.phase === "done") {
+        setFlow("guided");
+        setInitialStep(d.ui.stepIndex);
+        setInitialSub(d.ui.phase === "done" ? "done" : "interview");
+      } else if (hasMeaningfulContent(d.content)) {
+        setFlow("guided");
+        setInitialStep(0);
+        setInitialSub("interview");
+      }
     }
     setBooted(true);
   }, []);
-
-  const goEditor = useCallback(
-    (nextTitle: string, nextContent: ResumeContent) => {
-      setError(null);
-      setTitle(nextTitle);
-      setContent(nextContent);
-      setEditorKey((k) => k + 1);
-      setPhase("editor");
-    },
-    [],
-  );
-
-  const handleGenerateAi = useCallback(
-    async (jobTitle: string, experienceOrResume: string) => {
-      setError(null);
-      setLoading(true);
-      try {
-        const res = await fetch("/api/builder/generate-scratch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobTitle, experienceOrResume }),
-        });
-        const j = (await res.json()) as {
-          error?: string;
-          content?: unknown;
-          title?: string;
-        };
-        if (!res.ok) {
-          setError(j.error ?? "Could not generate. Try again.");
-          return;
-        }
-        if (!j.content) {
-          setError("Invalid response. Try again.");
-          return;
-        }
-        const next = normalizeResumeContent(j.content);
-        goEditor(
-          j.title?.trim() || jobTitle.trim() || defaultDraftTitle(),
-          {
-            ...next,
-            meta: { ...next.meta, templateSelectionComplete: true },
-          },
-        );
-      } catch {
-        setError("Network error. Check your connection and try again.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [goEditor],
-  );
 
   const handleUploadFile = useCallback(
     async (file: File) => {
@@ -102,7 +61,6 @@ export function PublicResumeBuilderClient() {
         const j = (await res.json()) as {
           error?: string;
           content?: unknown;
-          title?: string;
         };
         if (!res.ok) {
           setError(j.error ?? "Upload failed. Try another file.");
@@ -113,25 +71,38 @@ export function PublicResumeBuilderClient() {
           return;
         }
         const next = normalizeResumeContent(j.content);
-        goEditor(j.title?.trim() || defaultDraftTitle(), {
+        setInitialContent({
           ...next,
           meta: { ...next.meta, templateSelectionComplete: true },
         });
+        setInitialStep(0);
+        setInitialSub("interview");
+        setMountKey((k) => k + 1);
+        setFlow("guided");
       } catch {
         setError("Network error. Check your connection and try again.");
       } finally {
         setLoading(false);
       }
     },
-    [goEditor],
+    [],
   );
+
+  const onStartGuided = useCallback(() => {
+    setInitialContent(defaultResumeContent());
+    setInitialStep(0);
+    setInitialSub("interview");
+    setMountKey((k) => k + 1);
+    setFlow("guided");
+    setError(null);
+  }, []);
 
   const onStartOver = useCallback(() => {
     clearLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
-    setTitle(defaultDraftTitle());
-    setContent(defaultResumeContent());
-    setEditorKey((k) => k + 1);
-    setPhase("start");
+    setInitialContent(defaultResumeContent());
+    setInitialStep(0);
+    setInitialSub("interview");
+    setFlow("start");
     setError(null);
   }, []);
 
@@ -143,26 +114,38 @@ export function PublicResumeBuilderClient() {
 
   return (
     <div>
-      {phase === "start" ? (
+      {flow === "start" ? (
         <ResumeBuilderStartView
+          uploadIntent={uploadIntent}
           loading={loading}
           error={error}
           onClearError={() => setError(null)}
-          onGenerateAi={handleGenerateAi}
+          onStartGuided={onStartGuided}
           onUploadFile={handleUploadFile}
         />
       ) : (
-        <ResumeEditorShell
-          key={editorKey}
-          resumeId={PUBLIC_BUILDER_RESUME_ID}
-          initialTitle={title}
-          initialContent={content}
-          publicBuilder={{
-            storageKey: LOCAL_RESUME_DRAFT_KEY,
-            onStartOver,
-          }}
+        <GuidedResumeBuilder
+          key={mountKey}
+          initialContent={initialContent}
+          initialStepIndex={initialStep}
+          initialSubPhase={initialSub}
+          onStartOver={onStartOver}
+          storageKey={LOCAL_RESUME_DRAFT_KEY}
         />
       )}
     </div>
   );
+}
+
+function hasMeaningfulContent(c: ResumeContent): boolean {
+  if ((c.contact.fullName ?? "").trim()) {
+    return true;
+  }
+  if ((c.target.jobTitle ?? "").trim()) {
+    return true;
+  }
+  if (c.experience.items.length) {
+    return true;
+  }
+  return false;
 }

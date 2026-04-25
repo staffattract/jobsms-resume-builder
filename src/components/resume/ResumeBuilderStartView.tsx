@@ -1,37 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import {
-  inputClass,
-  labelClass,
-  btnPrimary,
-  btnSecondary,
-  textareaClass,
-} from "@/components/resume/form-classes";
+import { useEffect, useState } from "react";
+import { labelClass, btnSecondary } from "@/components/resume/form-classes";
 
 const cardBase =
   "w-full rounded-2xl border border-zinc-200/90 bg-white p-5 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6";
 
-type Sub = "main" | "ai" | "upload";
+type Sub = "main" | "upload";
 
 type Props = {
+  uploadIntent: boolean;
   loading: boolean;
   error: string | null;
   onClearError: () => void;
-  onGenerateAi: (jobTitle: string, experienceOrResume: string) => void;
+  onStartGuided: () => void;
   onUploadFile: (file: File) => void;
 };
 
 export function ResumeBuilderStartView({
+  uploadIntent,
   loading,
   error,
   onClearError,
-  onGenerateAi,
+  onStartGuided,
   onUploadFile,
 }: Props) {
-  const [sub, setSub] = useState<Sub>("main");
-  const [jobTitle, setJobTitle] = useState("");
-  const [paste, setPaste] = useState("");
+  const [sub, setSub] = useState<Sub>(() => (uploadIntent ? "upload" : "main"));
+
+  useEffect(() => {
+    if (uploadIntent) {
+      setSub("upload");
+    }
+  }, [uploadIntent]);
 
   return (
     <div className="mx-auto max-w-lg">
@@ -41,7 +41,7 @@ export function ResumeBuilderStartView({
             How do you want to start?
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            No account required. You can work locally in your browser.
+            Quick questions — no account needed. We save as you go in this browser.
           </p>
           <div className="mt-8 flex flex-col gap-3">
             <button
@@ -49,14 +49,14 @@ export function ResumeBuilderStartView({
               className={cardBase}
               onClick={() => {
                 onClearError();
-                setSub("ai");
+                onStartGuided();
               }}
             >
               <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Build from scratch with AI
+                Start interview
               </span>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                We&apos;ll generate a first draft you can edit.
+                Answer one simple question at a time. Use AI or preview anytime.
               </p>
             </button>
             <button
@@ -71,95 +71,12 @@ export function ResumeBuilderStartView({
                 Upload my existing resume
               </span>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                PDF, DOCX, or plain text. We import what you provide — no fake
-                jobs or dates.
+                PDF, DOCX, or TXT — we&apos;ll drop you into the same interview to
+                edit.
               </p>
             </button>
           </div>
         </>
-      ) : null}
-
-      {sub === "ai" ? (
-        <div>
-          <button
-            type="button"
-            onClick={() => {
-              onClearError();
-              setSub("main");
-            }}
-            className="mb-4 text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-          >
-            ← Back
-          </button>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Build with AI
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Target job title is required. Paste experience if you have it.
-          </p>
-          <form
-            className="mt-6 flex flex-col gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onGenerateAi(jobTitle, paste);
-            }}
-          >
-            <div>
-              <label htmlFor="start-job" className={labelClass}>
-                Job title <span className="text-red-600">*</span>
-              </label>
-              <input
-                id="start-job"
-                className={inputClass}
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="e.g. Senior Project Manager"
-                required
-                autoFocus
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label htmlFor="start-paste" className={labelClass}>
-                Paste your experience or resume (optional)
-              </label>
-              <textarea
-                id="start-paste"
-                className={textareaClass}
-                rows={8}
-                value={paste}
-                onChange={(e) => setPaste(e.target.value)}
-                placeholder="Work history, achievements, or a full resume in plain text…"
-                disabled={loading}
-              />
-            </div>
-            {error ? (
-              <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                {error}
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                type="submit"
-                className={`${btnPrimary} w-full sm:w-auto`}
-                disabled={loading || !jobTitle.trim()}
-              >
-                {loading ? "Working…" : "Generate resume with AI"}
-              </button>
-              <button
-                type="button"
-                className={`${btnSecondary} w-full sm:w-auto`}
-                onClick={() => {
-                  onClearError();
-                  setSub("main");
-                }}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
       ) : null}
 
       {sub === "upload" ? (
@@ -178,7 +95,7 @@ export function ResumeBuilderStartView({
             Upload resume
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            PDF, DOCX, or TXT. Max 5 MB.
+            PDF, DOCX, or TXT. Max 5 MB. Legacy .doc is not supported — use DOCX.
           </p>
           <div className="mt-6">
             <label className={labelClass} htmlFor="start-file">
@@ -204,6 +121,14 @@ export function ResumeBuilderStartView({
               {error}
             </p>
           ) : null}
+          <button
+            type="button"
+            className={`${btnSecondary} mt-6`}
+            onClick={() => onStartGuided()}
+            disabled={loading}
+          >
+            Skip — start with a blank form
+          </button>
         </div>
       ) : null}
     </div>
