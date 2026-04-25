@@ -11,6 +11,13 @@ import {
   textareaClass,
 } from "@/components/resume/form-classes";
 import { canRunPartialAiFill } from "@/lib/builder/merge-partial-fill";
+import {
+  isForkScreen,
+  nextLinearScreen,
+  previousScreen,
+  progressLine,
+  type GuidedScreen,
+} from "@/lib/builder/guided-cursor";
 import { newId } from "@/lib/id";
 import {
   defaultDraftTitle,
@@ -19,21 +26,19 @@ import {
 } from "@/lib/resume/local-draft";
 import {
   normalizeResumeContent,
+  type EducationItem,
   type ExperienceItem,
   type ResumeContent,
 } from "@/lib/resume/types";
 
 const AUTOSAVE_MS = 500;
 const SAVED_MSG_MS = 2000;
-const N_STEPS = 14;
-const DONE = 14;
 
 type SaveS = "idle" | "saving" | "saved";
 
 type Props = {
   initialContent: ResumeContent;
-  initialStepIndex: number;
-  initialSubPhase: "interview" | "done";
+  initialScreen: GuidedScreen;
   onStartOver: () => void;
   storageKey: string;
 };
@@ -58,29 +63,43 @@ function joinName(a: string, b: string): string {
   return [a, b].map((x) => x.trim()).filter(Boolean).join(" ");
 }
 
-function readJ0(c: ResumeContent) {
-  return c.experience.items[0];
+function readJob(c: ResumeContent, i: number): ExperienceItem | undefined {
+  return c.experience.items[i];
 }
 
-function withJ0(
+function withJob(
   c: ResumeContent,
+  idx: number,
   map: (j: ExperienceItem) => ExperienceItem,
 ): ResumeContent {
-  const cur = c.experience.items;
-  if (cur.length === 0) {
-    return {
-      ...c,
-      experience: {
-        items: [map({ id: newId(), employer: "", title: "", bullets: [] })],
-      },
-    };
+  const items = c.experience.items.map((x) => ({ ...x, bullets: x.bullets.map((b) => ({ ...b })) }));
+  while (items.length <= idx) {
+    items.push({ id: newId(), employer: "", title: "", bullets: [] });
   }
-  return {
-    ...c,
-    experience: {
-      items: [map({ ...cur[0]! }), ...cur.slice(1)],
-    },
-  };
+  items[idx] = map({ ...items[idx]! });
+  return { ...c, experience: { items } };
+}
+
+function readEdu(
+  c: ResumeContent,
+  i: number,
+):
+  | import("@/lib/resume/types").EducationItem
+  | undefined {
+  return c.education.items[i];
+}
+
+function withEdu(
+  c: ResumeContent,
+  idx: number,
+  map: (e: import("@/lib/resume/types").EducationItem) => import("@/lib/resume/types").EducationItem,
+): ResumeContent {
+  const items = c.education.items.map((e) => ({ ...e }));
+  while (items.length <= idx) {
+    items.push({ id: newId(), institution: "" });
+  }
+  items[idx] = map({ ...items[idx]! });
+  return { ...c, education: { items } };
 }
 
 function docTitle(c: ResumeContent): string {
@@ -95,79 +114,131 @@ function docTitle(c: ResumeContent): string {
   return defaultDraftTitle();
 }
 
-const LINES: { t: string; op?: true }[] = [
-  { t: "What’s your first name?" },
-  { t: "What’s your last name?" },
-  { t: "What email should we show?" },
-  { t: "What’s the best phone number?" },
-  { t: "What city and state are you in? (e.g. Austin, TX)" },
-  { t: "What job title are you going for next?" },
-  { t: "What was your most recent job title?" },
-  { t: "What company was that for?" },
-  { t: "When did you start? (e.g. 2020-01)" },
-  { t: "End date, or is it a current role?" },
-  { t: "What did you do there? (one line per bullet point)" },
-  { t: "Where did you go to school?", op: true },
-  { t: "Degree and major (if you want them shown)", op: true },
-  { t: "List your top skills, separated by commas" },
-];
+function mainQuestion(screen: GuidedScreen): { text: string; optional?: true } {
+  if (screen.kind === "name") {
+    if (screen.n === 0) {
+      return { text: "What’s your first name?" };
+    }
+    return { text: "What’s your last name?" };
+  }
+  if (screen.kind === "contact") {
+    if (screen.n === 0) {
+      return { text: "What email should we show?" };
+    }
+    if (screen.n === 1) {
+      return { text: "What’s the best phone number?" };
+    }
+    return { text: "What city and state are you in? (e.g. Austin, TX)" };
+  }
+  if (screen.kind === "target") {
+    return { text: "What job title are you going for next?" };
+  }
+  if (screen.kind === "job") {
+    if (screen.n === 0) {
+      return {
+        text:
+          screen.jobIndex === 0
+            ? "What was your most recent job title?"
+            : "What was your job title?",
+      };
+    }
+    if (screen.n === 1) {
+      return { text: "What company was that for?" };
+    }
+    if (screen.n === 2) {
+      return { text: "When did you start? (e.g. 2020-01)" };
+    }
+    if (screen.n === 3) {
+      return { text: "End date, or is it a current role?" };
+    }
+    return { text: "What did you do there? (one line per bullet point)" };
+  }
+  if (screen.kind === "jobFork") {
+    return { text: "Would you like to add another job?" };
+  }
+  if (screen.kind === "edu") {
+    if (screen.n === 0) {
+      return { text: "Where did you go to school?", optional: true };
+    }
+    return { text: "Degree and major (if you want them shown)", optional: true };
+  }
+  if (screen.kind === "eduFork") {
+    return { text: "Would you like to add another school?" };
+  }
+  if (screen.kind === "skills") {
+    return { text: "List your top skills, separated by commas" };
+  }
+  return { text: "Nice work" };
+}
 
-function applyStepCommit(
-  step: number,
+type Locals = {
+  nameA: string;
+  nameB: string;
+  endIn: string;
+  cur: boolean;
+  duty: string;
+  deg: string;
+  sk: string;
+};
+
+function commitOnContinue(
+  s: GuidedScreen,
   c: ResumeContent,
-  x: {
-    nameA: string;
-    nameB: string;
-    endInput: string;
-    current: boolean;
-    duty: string;
-    deg: string;
-    skills: string;
-  },
+  l: Locals,
 ): ResumeContent {
-  const n: ResumeContent = {
+  let n: ResumeContent = {
     ...c,
     contact: { ...c.contact, links: c.contact.links ?? [] },
     target: { ...c.target },
     summary: { ...c.summary },
-    experience: { items: c.experience.items.map((i) => ({ ...i, bullets: i.bullets.map((b) => ({ ...b })) })) },
+    experience: {
+      items: c.experience.items.map((i) => ({ ...i, bullets: i.bullets.map((b) => ({ ...b })) })),
+    },
     skills: { groups: c.skills.groups.map((g) => ({ ...g, items: [...g.items] })) },
     education: { items: c.education.items.map((e) => ({ ...e })) },
     meta: { ...c.meta },
   };
 
-  if (step === 1) {
-    n.contact = { ...n.contact, fullName: joinName(x.nameA, x.nameB) };
+  if (s.kind === "name" && s.n === 1) {
+    n.contact = { ...n.contact, fullName: joinName(l.nameA, l.nameB) };
   }
-  if (step === 9) {
-    const it0 = readJ0(n) ?? { id: newId(), employer: "", title: "", bullets: [] };
-    const it = { ...it0 };
-    it.endDate = x.current ? null : tr(x.endInput) === "" ? null : tr(x.endInput);
-    n.experience = { items: [it, ...n.experience.items.slice(1)] };
+  if (s.kind === "job" && s.n === 3) {
+    const it = readJob(n, s.jobIndex) ?? {
+      id: newId(),
+      employer: "",
+      title: "",
+      bullets: [],
+    };
+    const it2 = { ...it };
+    it2.endDate = l.cur
+      ? null
+      : tr(l.endIn) === ""
+        ? null
+        : tr(l.endIn);
+    n = withJob(n, s.jobIndex, () => it2);
   }
-  if (step === 10) {
-    const it0 = readJ0(n) ?? { id: newId(), employer: "", title: "", bullets: [] };
-    const it = { ...it0 };
-    const lines = tr(x.duty)
+  if (s.kind === "job" && s.n === 4) {
+    const it = readJob(n, s.jobIndex) ?? {
+      id: newId(),
+      employer: "",
+      title: "",
+      bullets: [],
+    };
+    const lines = tr(l.duty)
       .split("\n")
-      .map((s) => s.trim())
+      .map((x) => x.trim())
       .filter(Boolean);
-    it.bullets = lines.length ? lines.map((text) => ({ id: newId(), text })) : [];
-    n.experience = { items: [it, ...n.experience.items.slice(1)] };
+    const it2 = { ...it, bullets: lines.length ? lines.map((t) => ({ id: newId(), text: t })) : [] };
+    n = withJob(n, s.jobIndex, () => it2);
   }
-  if (step === 12) {
-    const e = n.education.items[0]
-      ? { ...n.education.items[0]! }
-      : { id: newId(), institution: "" };
-    const p = tr(x.deg);
-    e.degree = p || undefined;
-    e.field = undefined;
-    n.education = { items: [e, ...n.education.items.slice(1)] };
+  if (s.kind === "edu" && s.n === 1) {
+    const p = tr(l.deg);
+    n = withEdu(n, s.eduIndex, (e) => ({ ...e, degree: p || undefined, field: undefined }));
   }
-  if (step === 13) {
-    const items = tr(x.skills)
+  if (s.kind === "skills") {
+    const items = tr(l.sk)
       .split(",")
-      .map((s) => s.trim())
+      .map((x) => x.trim())
       .filter(Boolean);
     n.skills = {
       groups: items.length
@@ -178,17 +249,48 @@ function applyStepCommit(
   return n;
 }
 
+function syncAllLocals(
+  c: ResumeContent,
+  setters: {
+    setNameA: (v: string) => void;
+    setNameB: (v: string) => void;
+    setEndIn: (v: string) => void;
+    setCur: (v: boolean) => void;
+    setDuty: (v: string) => void;
+    setDeg: (v: string) => void;
+    setSk: (v: string) => void;
+  },
+  screen: GuidedScreen,
+) {
+  setters.setNameA(splitName(c.contact.fullName ?? "").a);
+  setters.setNameB(splitName(c.contact.fullName ?? "").b);
+  setters.setSk((c.skills.groups[0]?.items ?? []).join(", "));
+
+  if (screen.kind === "job") {
+    const j = readJob(c, screen.jobIndex);
+    if (j) {
+      setters.setCur(j.endDate === null);
+      setters.setEndIn(
+        j.endDate == null || j.endDate === null ? "" : String(j.endDate),
+      );
+      setters.setDuty((j.bullets ?? []).map((b) => b.text).join("\n"));
+    }
+  }
+
+  if (screen.kind === "edu") {
+    const e = readEdu(c, screen.eduIndex);
+    setters.setDeg([e?.degree, e?.field].filter(Boolean).join(" — "));
+  }
+}
+
 export function GuidedResumeBuilder({
   initialContent,
-  initialStepIndex,
-  initialSubPhase,
+  initialScreen,
   onStartOver,
   storageKey,
 }: Props) {
   const [content, setContent] = useState<ResumeContent>(initialContent);
-  const [step, setStep] = useState(() =>
-    initialSubPhase === "done" ? DONE : Math.min(Math.max(0, initialStepIndex), DONE),
-  );
+  const [screen, setScreen] = useState<GuidedScreen>(initialScreen);
   const [saveState, setSaveS] = useState<SaveS>("idle");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
@@ -196,27 +298,18 @@ export function GuidedResumeBuilder({
   const [entPdf, setEntPdf] = useState<boolean | null>(null);
   const [nameA, setNameA] = useState(() => splitName(initialContent.contact.fullName ?? "").a);
   const [nameB, setNameB] = useState(() => splitName(initialContent.contact.fullName ?? "").b);
-  const j0 = initialContent.experience.items[0];
-  const [endIn, setEndIn] = useState(() => {
-    if (!j0 || j0.endDate === null) {
-      return "";
-    }
-    return j0.endDate ? String(j0.endDate) : "";
-  });
-  const [cur, setCur] = useState(() => j0?.endDate === null);
-  const [duty, setDuty] = useState(() =>
-    (j0?.bullets ?? []).map((b) => b.text).join("\n"),
-  );
-  const e0 = initialContent.education.items[0];
-  const [deg, setDeg] = useState(() =>
-    [e0?.degree, e0?.field].filter(Boolean).join(" — "),
-  );
+  const [endIn, setEndIn] = useState("");
+  const [cur, setCur] = useState(false);
+  const [duty, setDuty] = useState("");
+  const [deg, setDeg] = useState("");
   const [sk, setSk] = useState(() =>
     (initialContent.skills.groups[0]?.items ?? []).join(", "),
   );
 
   const g = useRef(0);
   const tmr = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevJ = useRef<string>("");
+  const prevE = useRef<string>("");
 
   const fetchE = useCallback(async () => {
     try {
@@ -235,11 +328,85 @@ export function GuidedResumeBuilder({
     void fetchE();
   }, [fetchE]);
 
+  const expCount = content.experience.items.length;
+  const eduCount = content.education.items.length;
+  const counts = { experienceCount: expCount, educationCount: eduCount };
+  const backTarget = previousScreen(screen, counts);
+  const canBack = !preview && !aiBusy && backTarget != null;
+  const interview = screen.kind !== "done" && !preview;
+  const showContinue =
+    !preview && screen.kind !== "done" && !isForkScreen(screen);
+
+  const locals: Locals = { nameA, nameB, endIn, cur, duty, deg, sk };
+
+  // Sync end/duty when entering a job’s date or duties step
+  useEffect(() => {
+    if (screen.kind !== "job" || (screen.n !== 3 && screen.n !== 4)) {
+      return;
+    }
+    const jk = `j${screen.jobIndex}-${screen.n}`;
+    if (prevJ.current === jk) {
+      return;
+    }
+    prevJ.current = jk;
+    const j = readJob(content, screen.jobIndex);
+    if (!j) {
+      return;
+    }
+    if (screen.n === 3) {
+      setCur(j.endDate === null);
+      setEndIn(
+        j.endDate == null || j.endDate === null
+          ? ""
+          : String(j.endDate),
+      );
+    } else {
+      setDuty((j.bullets ?? []).map((b) => b.text).join("\n"));
+    }
+  }, [screen, content.experience.items]);
+
+  useEffect(() => {
+    if (screen.kind !== "edu" || screen.n !== 1) {
+      return;
+    }
+    const ek = `e${screen.eduIndex}-1`;
+    if (prevE.current === ek) {
+      return;
+    }
+    prevE.current = ek;
+    const e = readEdu(content, screen.eduIndex);
+    setDeg([e?.degree, e?.field].filter(Boolean).join(" — "));
+  }, [screen, content.education.items]);
+
+  useEffect(() => {
+    if (screen.kind === "job" && screen.n >= 3) {
+      return;
+    }
+    if (screen.kind === "job" && screen.n < 3) {
+      prevJ.current = "";
+    }
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen.kind !== "edu" || screen.n === 0) {
+      if (screen.kind === "edu") {
+        prevE.current = "";
+      }
+    }
+  }, [screen]);
+
   const doSave = useCallback(() => {
     const x = ++g.current;
     setSaveS("saving");
-    const ui: PublicBuilderUi =
-      step >= DONE ? { phase: "done", stepIndex: DONE } : { phase: "interview", stepIndex: step };
+    const jIdx = screen.kind === "job" ? screen.jobIndex : undefined;
+    const eIdx = screen.kind === "edu" ? screen.eduIndex : undefined;
+    const ui: PublicBuilderUi = {
+      phase: screen.kind === "done" ? "done" : "interview",
+      v: 2,
+      screen,
+      ...(jIdx !== undefined ? { jobIndex: jIdx } : {}),
+      ...(eIdx !== undefined ? { educationIndex: eIdx } : {}),
+    };
     saveLocalResumeDraft({ title: docTitle(content), content, ui }, storageKey);
     if (x !== g.current) {
       return;
@@ -252,76 +419,40 @@ export function GuidedResumeBuilder({
       setSaveS("idle");
       tmr.current = null;
     }, SAVED_MSG_MS);
-  }, [content, step, storageKey]);
+  }, [content, screen, storageKey]);
 
   useEffect(() => {
     const t = setTimeout(doSave, AUTOSAVE_MS);
     return () => clearTimeout(t);
-  }, [content, step, doSave]);
+  }, [content, screen, doSave]);
 
   useEffect(() => {
-    if (step >= 6 && step <= 10) {
+    if (screen.kind === "job" && screen.n <= 3) {
       setContent((c) => {
-        if (c.experience.items.length) {
+        if (c.experience.items.length > screen.jobIndex) {
           return c;
         }
-        const u = { ...c };
-        u.experience = {
-          items: [{ id: newId(), employer: "", title: "", bullets: [] }],
-        };
-        return u;
+        return withJob(c, screen.jobIndex, (j) => j);
       });
     }
-  }, [step]);
+  }, [screen]);
 
   useEffect(() => {
-    if (step >= 11 && step <= 12) {
+    if (screen.kind === "edu" && screen.n === 0) {
       setContent((c) => {
-        if (c.education.items.length) {
+        if (c.education.items.length > screen.eduIndex) {
           return c;
         }
-        const u = { ...c };
-        u.education = { items: [{ id: newId(), institution: "" }] };
-        return u;
+        return withEdu(c, screen.eduIndex, (e) => e);
       });
     }
-  }, [step]);
-
-  const j0End = content.experience.items[0]?.endDate;
-  const endSnap =
-    j0End === null ? "null" : j0End === undefined ? "undef" : String(j0End);
-  const prevS = useRef(step);
-  useEffect(() => {
-    if (step === 9 && prevS.current !== 9) {
-      const j = content.experience.items[0];
-      if (j) {
-        setCur(j.endDate === null);
-        setEndIn(j.endDate == null || j.endDate === null ? "" : String(j.endDate));
-      }
-    }
-    prevS.current = step;
-  }, [step, endSnap]);
+  }, [screen]);
 
   const ex = (entPdf === true ? "allowed" : entPdf === false ? "denied" : "pending") as
     | "allowed"
     | "pending"
     | "denied";
   const canAi = canRunPartialAiFill(content);
-
-  const syncLocalsFromContent = (c: ResumeContent) => {
-    const sp = splitName(c.contact.fullName ?? "");
-    setNameA(sp.a);
-    setNameB(sp.b);
-    const job = c.experience.items[0];
-    if (job) {
-      setDuty(job.bullets.map((b) => b.text).join("\n"));
-      setCur(job.endDate === null);
-      setEndIn(job.endDate == null || job.endDate === null ? "" : String(job.endDate));
-    }
-    const ed = c.education.items[0];
-    setDeg([ed?.degree, ed?.field].filter(Boolean).join(" — "));
-    setSk((c.skills.groups[0]?.items ?? []).join(", "));
-  };
 
   const runAi = async () => {
     if (!canAi) {
@@ -355,7 +486,21 @@ export function GuidedResumeBuilder({
           templateSelectionComplete: true,
         },
       }));
-      syncLocalsFromContent(n);
+      syncAllLocals(
+        n,
+        {
+          setNameA,
+          setNameB,
+          setEndIn,
+          setCur,
+          setDuty,
+          setDeg,
+          setSk,
+        },
+        screen,
+      );
+      prevJ.current = "";
+      prevE.current = "";
     } catch {
       setAiErr("Network error. Try again.");
     } finally {
@@ -364,40 +509,91 @@ export function GuidedResumeBuilder({
   };
 
   const goNext = () => {
-    if (aiBusy) {
+    if (aiBusy || isForkScreen(screen) || screen.kind === "done" || preview) {
       return;
     }
-    setContent((c) =>
-      applyStepCommit(step, c, {
-        nameA,
-        nameB,
-        endInput: endIn,
-        current: cur,
-        duty,
-        deg,
-        skills: sk,
-      }),
-    );
-    if (step < N_STEPS - 1) {
-      setStep((s) => s + 1);
-    } else {
-      setStep(DONE);
-    }
+    setContent((c) => {
+      const n = commitOnContinue(screen, c, locals);
+      const nxt = nextLinearScreen(screen, {
+        experienceCount: n.experience.items.length,
+        educationCount: n.education.items.length,
+      });
+      setScreen(nxt);
+      return n;
+    });
   };
 
   const goBack = () => {
     if (aiBusy) {
       return;
     }
-    if (step === DONE) {
-      setStep(13);
+    if (preview) {
       return;
     }
-    if (step <= 0) {
+    const p = previousScreen(screen, {
+      experienceCount: content.experience.items.length,
+      educationCount: content.education.items.length,
+    });
+    if (!p) {
       return;
     }
-    setStep((s) => s - 1);
+    setScreen(p);
+    prevJ.current = "";
+    prevE.current = "";
   };
+
+  const onAddAnotherJob = () => {
+    if (aiBusy) {
+      return;
+    }
+    setContent((c) => {
+      const items: typeof c.experience.items = [
+        ...c.experience.items,
+        { id: newId(), employer: "", title: "", bullets: [] },
+      ];
+      setScreen({ kind: "job", jobIndex: items.length - 1, n: 0 });
+      return { ...c, experience: { items } };
+    });
+  };
+
+  const onContinueToEducation = () => {
+    if (aiBusy) {
+      return;
+    }
+    setContent((c) => {
+      if (c.education.items.length) {
+        setScreen({ kind: "edu", eduIndex: 0, n: 0 });
+        return c;
+      }
+      const items = [{ id: newId(), institution: "" }, ...c.education.items];
+      setScreen({ kind: "edu", eduIndex: 0, n: 0 });
+      return { ...c, education: { items } };
+    });
+  };
+
+  const onAddAnotherSchool = () => {
+    if (aiBusy) {
+      return;
+    }
+    setContent((c) => {
+      const items: typeof c.education.items = [
+        ...c.education.items,
+        { id: newId(), institution: "" },
+      ];
+      setScreen({ kind: "edu", eduIndex: items.length - 1, n: 0 });
+      return { ...c, education: { items } };
+    });
+  };
+
+  const onContinueToSkills = () => {
+    if (aiBusy) {
+      return;
+    }
+    setScreen({ kind: "skills" });
+  };
+
+  const mq = mainQuestion(screen);
+  const pl = progressLine(screen);
 
   return (
     <div className="space-y-6">
@@ -426,19 +622,21 @@ export function GuidedResumeBuilder({
         </p>
       ) : null}
 
-      {step < DONE && !preview ? (
+      {interview && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Step {step + 1} of {N_STEPS}
+            {pl}
           </p>
           <h2 className="mt-1 text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {LINES[step]?.t ?? ""}
-            {LINES[step]?.op ? <span className="text-sm font-normal text-zinc-500"> (optional)</span> : null}
+            {mq.text}
+            {mq.optional ? (
+              <span className="text-sm font-normal text-zinc-500"> (optional)</span>
+            ) : null}
           </h2>
         </div>
-      ) : null}
+      )}
 
-      {step === DONE && !preview ? (
+      {screen.kind === "done" && !preview ? (
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/30">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Nice work.</h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
@@ -466,13 +664,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 0 ? (
+      {interview && screen.kind === "name" && screen.n === 0 ? (
         <div>
-          <label className={labelClass} htmlFor="g0">
+          <label className={labelClass} htmlFor="g-n0">
             First name
           </label>
           <input
-            id="g0"
+            id="g-n0"
             className={inputClass}
             value={nameA}
             onChange={(e) => setNameA(e.target.value)}
@@ -482,13 +680,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 1 ? (
+      {interview && screen.kind === "name" && screen.n === 1 ? (
         <div>
-          <label className={labelClass} htmlFor="g1">
+          <label className={labelClass} htmlFor="g-n1">
             Last name
           </label>
           <input
-            id="g1"
+            id="g-n1"
             className={inputClass}
             value={nameB}
             onChange={(e) => setNameB(e.target.value)}
@@ -498,13 +696,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 2 ? (
+      {interview && screen.kind === "contact" && screen.n === 0 ? (
         <div>
-          <label className={labelClass} htmlFor="g2">
+          <label className={labelClass} htmlFor="g-c0">
             Email
           </label>
           <input
-            id="g2"
+            id="g-c0"
             className={inputClass}
             type="email"
             value={content.contact.email ?? ""}
@@ -517,13 +715,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 3 ? (
+      {interview && screen.kind === "contact" && screen.n === 1 ? (
         <div>
-          <label className={labelClass} htmlFor="g3">
+          <label className={labelClass} htmlFor="g-c1">
             Phone
           </label>
           <input
-            id="g3"
+            id="g-c1"
             className={inputClass}
             type="tel"
             value={content.contact.phone ?? ""}
@@ -536,13 +734,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 4 ? (
+      {interview && screen.kind === "contact" && screen.n === 2 ? (
         <div>
-          <label className={labelClass} htmlFor="g4">
+          <label className={labelClass} htmlFor="g-c2">
             Location
           </label>
           <input
-            id="g4"
+            id="g-c2"
             className={inputClass}
             value={content.contact.location ?? ""}
             onChange={(e) =>
@@ -554,13 +752,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 5 ? (
+      {interview && screen.kind === "target" ? (
         <div>
-          <label className={labelClass} htmlFor="g5">
+          <label className={labelClass} htmlFor="g-t">
             Target job title
           </label>
           <input
-            id="g5"
+            id="g-t"
             className={inputClass}
             value={content.target.jobTitle ?? ""}
             onChange={(e) =>
@@ -571,58 +769,58 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 6 ? (
+      {interview && screen.kind === "job" && screen.n === 0 ? (
         <div>
-          <label className={labelClass} htmlFor="g6">
+          <label className={labelClass} htmlFor="g-jt0">
             Job title
           </label>
           <input
-            id="g6"
+            id="g-jt0"
             className={inputClass}
-            value={readJ0(content)?.title ?? ""}
+            value={readJob(content, screen.jobIndex)?.title ?? ""}
             onChange={(e) => {
-              setContent((c) => withJ0(c, (j) => ({ ...j, title: e.target.value })));
+              setContent((c) => withJob(c, screen.jobIndex, (j) => ({ ...j, title: e.target.value })));
             }}
             autoFocus
           />
         </div>
       ) : null}
 
-      {!preview && step === 7 ? (
+      {interview && screen.kind === "job" && screen.n === 1 ? (
         <div>
-          <label className={labelClass} htmlFor="g7">
+          <label className={labelClass} htmlFor="g-j1">
             Company
           </label>
           <input
-            id="g7"
+            id="g-j1"
             className={inputClass}
-            value={readJ0(content)?.employer ?? ""}
+            value={readJob(content, screen.jobIndex)?.employer ?? ""}
             onChange={(e) => {
-              setContent((c) => withJ0(c, (j) => ({ ...j, employer: e.target.value })));
+              setContent((c) => withJob(c, screen.jobIndex, (j) => ({ ...j, employer: e.target.value })));
             }}
             autoFocus
           />
         </div>
       ) : null}
 
-      {!preview && step === 8 ? (
+      {interview && screen.kind === "job" && screen.n === 2 ? (
         <div>
-          <label className={labelClass} htmlFor="g8">
+          <label className={labelClass} htmlFor="g-j2">
             Start
           </label>
           <input
-            id="g8"
+            id="g-j2"
             className={inputClass}
-            value={readJ0(content)?.startDate ?? ""}
+            value={readJob(content, screen.jobIndex)?.startDate ?? ""}
             onChange={(e) => {
-              setContent((c) => withJ0(c, (j) => ({ ...j, startDate: e.target.value })));
+              setContent((c) => withJob(c, screen.jobIndex, (j) => ({ ...j, startDate: e.target.value })));
             }}
             autoFocus
           />
         </div>
       ) : null}
 
-      {!preview && step === 9 ? (
+      {interview && screen.kind === "job" && screen.n === 3 ? (
         <div className="space-y-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
             <input
@@ -640,11 +838,11 @@ export function GuidedResumeBuilder({
           </label>
           {!cur ? (
             <div>
-              <label className={labelClass} htmlFor="g9e">
+              <label className={labelClass} htmlFor="g-je">
                 End date
               </label>
               <input
-                id="g9e"
+                id="g-je"
                 className={inputClass}
                 value={endIn}
                 onChange={(e) => setEndIn(e.target.value)}
@@ -656,13 +854,13 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 10 ? (
+      {interview && screen.kind === "job" && screen.n === 4 ? (
         <div>
-          <label className={labelClass} htmlFor="g10">
+          <label className={labelClass} htmlFor="g-jd">
             Responsibilities and wins
           </label>
           <textarea
-            id="g10"
+            id="g-jd"
             className={textareaClass}
             rows={8}
             value={duty}
@@ -673,37 +871,53 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 11 ? (
+      {interview && screen.kind === "jobFork" ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <button
+            type="button"
+            className={btnPrimary}
+            onClick={onAddAnotherJob}
+            disabled={aiBusy}
+          >
+            Add another job
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={onContinueToEducation}
+            disabled={aiBusy}
+          >
+            Continue to education
+          </button>
+        </div>
+      ) : null}
+
+      {interview && screen.kind === "edu" && screen.n === 0 ? (
         <div>
-          <label className={labelClass} htmlFor="g11">
+          <label className={labelClass} htmlFor="g-e0">
             School
           </label>
           <input
-            id="g11"
+            id="g-e0"
             className={inputClass}
-            value={content.education.items[0]?.institution ?? ""}
+            value={readEdu(content, screen.eduIndex)?.institution ?? ""}
             onChange={(e) => {
-              setContent((c) => {
-                const u = { ...c };
-                const ed = c.education.items[0] ?? { id: newId(), institution: "" };
-                u.education = {
-                  items: [{ ...ed, institution: e.target.value }, ...c.education.items.slice(1)],
-                };
-                return u;
-              });
+              setContent((c) =>
+                withEdu(c, screen.eduIndex, (ed) => ({ ...ed, institution: e.target.value })),
+              );
             }}
             autoFocus
           />
         </div>
       ) : null}
 
-      {!preview && step === 12 ? (
+      {interview && screen.kind === "edu" && screen.n === 1 ? (
         <div>
-          <label className={labelClass} htmlFor="g12">
+          <label className={labelClass} htmlFor="g-e1">
             Degree
           </label>
           <input
-            id="g12"
+            id="g-e1"
             className={inputClass}
             value={deg}
             onChange={(e) => setDeg(e.target.value)}
@@ -713,13 +927,34 @@ export function GuidedResumeBuilder({
         </div>
       ) : null}
 
-      {!preview && step === 13 ? (
+      {interview && screen.kind === "eduFork" ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <button
+            type="button"
+            className={btnPrimary}
+            onClick={onAddAnotherSchool}
+            disabled={aiBusy}
+          >
+            Add another school
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={onContinueToSkills}
+            disabled={aiBusy}
+          >
+            Continue to skills
+          </button>
+        </div>
+      ) : null}
+
+      {interview && screen.kind === "skills" ? (
         <div>
-          <label className={labelClass} htmlFor="g13">
+          <label className={labelClass} htmlFor="g-sk">
             Skills
           </label>
           <textarea
-            id="g13"
+            id="g-sk"
             className={textareaClass}
             rows={4}
             value={sk}
@@ -736,11 +971,11 @@ export function GuidedResumeBuilder({
             type="button"
             className={btnSecondary}
             onClick={goBack}
-            disabled={preview || (step <= 0 && step !== DONE) || aiBusy}
+            disabled={!canBack}
           >
             Back
           </button>
-          {step < DONE && !preview ? (
+          {showContinue ? (
             <button
               type="button"
               className={btnPrimary}

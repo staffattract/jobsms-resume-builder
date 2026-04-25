@@ -5,6 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { GuidedResumeBuilder } from "@/components/resume/GuidedResumeBuilder";
 import { ResumeBuilderStartView } from "@/components/resume/ResumeBuilderStartView";
 import {
+  defaultScreen,
+  migrateLegacyStep,
+  type GuidedScreen,
+} from "@/lib/builder/guided-cursor";
+import {
   defaultResumeContent,
   normalizeResumeContent,
   type ResumeContent,
@@ -17,6 +22,30 @@ import {
 
 type Flow = "start" | "guided";
 
+function resolveScreenFromDraft(ui: {
+  v?: number;
+  screen?: GuidedScreen;
+  phase?: string;
+  stepIndex?: number;
+}): GuidedScreen {
+  if (ui.v === 2) {
+    if (ui.phase === "done") {
+      return { kind: "done" };
+    }
+    if (ui.screen) {
+      return ui.screen;
+    }
+    return defaultScreen();
+  }
+  if (
+    (ui.phase === "interview" || ui.phase === "done") &&
+    typeof ui.stepIndex === "number"
+  ) {
+    return migrateLegacyStep(ui.stepIndex, ui.phase === "done");
+  }
+  return defaultScreen();
+}
+
 export function PublicResumeBuilderClient() {
   const searchParams = useSearchParams();
   const uploadIntent = searchParams.get("upload") === "1";
@@ -24,8 +53,7 @@ export function PublicResumeBuilderClient() {
   const [booted, setBooted] = useState(false);
   const [flow, setFlow] = useState<Flow>("start");
   const [initialContent, setInitialContent] = useState<ResumeContent>(defaultResumeContent);
-  const [initialStep, setInitialStep] = useState(0);
-  const [initialSub, setInitialSub] = useState<"interview" | "done">("interview");
+  const [initialScreen, setInitialScreen] = useState<GuidedScreen>(defaultScreen);
   const [mountKey, setMountKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +64,10 @@ export function PublicResumeBuilderClient() {
       setInitialContent(d.content);
       if (d.ui?.phase === "interview" || d.ui?.phase === "done") {
         setFlow("guided");
-        setInitialStep(d.ui.stepIndex);
-        setInitialSub(d.ui.phase === "done" ? "done" : "interview");
+        setInitialScreen(resolveScreenFromDraft(d.ui));
       } else if (hasMeaningfulContent(d.content)) {
         setFlow("guided");
-        setInitialStep(0);
-        setInitialSub("interview");
+        setInitialScreen(defaultScreen());
       }
     }
     setBooted(true);
@@ -75,8 +101,7 @@ export function PublicResumeBuilderClient() {
           ...next,
           meta: { ...next.meta, templateSelectionComplete: true },
         });
-        setInitialStep(0);
-        setInitialSub("interview");
+        setInitialScreen(defaultScreen());
         setMountKey((k) => k + 1);
         setFlow("guided");
       } catch {
@@ -90,8 +115,7 @@ export function PublicResumeBuilderClient() {
 
   const onStartGuided = useCallback(() => {
     setInitialContent(defaultResumeContent());
-    setInitialStep(0);
-    setInitialSub("interview");
+    setInitialScreen(defaultScreen());
     setMountKey((k) => k + 1);
     setFlow("guided");
     setError(null);
@@ -100,8 +124,7 @@ export function PublicResumeBuilderClient() {
   const onStartOver = useCallback(() => {
     clearLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
     setInitialContent(defaultResumeContent());
-    setInitialStep(0);
-    setInitialSub("interview");
+    setInitialScreen(defaultScreen());
     setFlow("start");
     setError(null);
   }, []);
@@ -127,8 +150,7 @@ export function PublicResumeBuilderClient() {
         <GuidedResumeBuilder
           key={mountKey}
           initialContent={initialContent}
-          initialStepIndex={initialStep}
-          initialSubPhase={initialSub}
+          initialScreen={initialScreen}
           onStartOver={onStartOver}
           storageKey={LOCAL_RESUME_DRAFT_KEY}
         />

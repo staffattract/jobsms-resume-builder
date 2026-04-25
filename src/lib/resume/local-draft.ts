@@ -1,3 +1,4 @@
+import type { GuidedScreen } from "@/lib/builder/guided-cursor";
 import {
   defaultResumeContent,
   normalizeResumeContent,
@@ -10,7 +11,13 @@ export const LOCAL_RESUME_DRAFT_KEY = "resumeblues:resume-draft:v1";
 /** Public guided builder only — persisted with the draft. */
 export type PublicBuilderUi = {
   phase: "start" | "interview" | "done";
-  stepIndex: number;
+  /** v1: linear step. v2: guided state machine. */
+  stepIndex?: number;
+  v?: 2;
+  screen?: GuidedScreen;
+  /** v2: optional copy for debugging / restore (redundant with screen) */
+  jobIndex?: number;
+  educationIndex?: number;
 };
 
 export type LocalResumeDraft = {
@@ -48,13 +55,27 @@ export function loadLocalResumeDraft(
   let ui: PublicBuilderUi | undefined;
   if (o.ui && typeof o.ui === "object") {
     const u = o.ui as Record<string, unknown>;
-    if (
+    if (u.v === 2 && u.screen && typeof u.screen === "object" && u.phase) {
+      const phase = u.phase;
+      if (phase === "start" || phase === "interview" || phase === "done") {
+        const screen = u.screen as GuidedScreen;
+        ui = {
+          phase,
+          v: 2,
+          screen,
+          ...(typeof u.jobIndex === "number" ? { jobIndex: u.jobIndex } : {}),
+          ...(typeof u.educationIndex === "number"
+            ? { educationIndex: u.educationIndex }
+            : {}),
+        } as PublicBuilderUi;
+      }
+    } else if (
       (u.phase === "start" ||
         u.phase === "interview" ||
         u.phase === "done") &&
       typeof u.stepIndex === "number" &&
       u.stepIndex >= 0 &&
-      u.stepIndex < 20
+      u.stepIndex < 30
     ) {
       ui = { phase: u.phase, stepIndex: u.stepIndex };
     }
