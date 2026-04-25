@@ -5,6 +5,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import {
   extractTextFromUpload,
+  kindFromFileNameOrType,
   type UploadFileKind,
 } from "@/lib/resume/parse-upload";
 
@@ -12,21 +13,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-
-function kindFromUpload(file: File): UploadFileKind | null {
-  const n = file.name.toLowerCase();
-  if (file.type === "application/pdf" || n.endsWith(".pdf")) {
-    return "pdf";
-  }
-  if (
-    file.type ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    n.endsWith(".docx")
-  ) {
-    return "docx";
-  }
-  return null;
-}
 
 function titleFromContent(fullName?: string) {
   const base = fullName?.trim();
@@ -58,13 +44,19 @@ export async function POST(request: Request) {
   }
 
   const file = entry as File;
-  const kind = kindFromUpload(file);
-  if (!kind) {
+  const kindRaw = kindFromFileNameOrType(file);
+  if (kindRaw === "msword" || !kindRaw) {
     return NextResponse.json(
-      { error: "Only PDF or DOCX files are supported." },
+      {
+        error:
+          kindRaw === "msword"
+            ? "Legacy .doc files are not supported. Please save as .docx and upload again."
+            : "Only PDF, DOCX, or TXT files are supported.",
+      },
       { status: 400 },
     );
   }
+  const kind: UploadFileKind = kindRaw;
 
   const buffer = Buffer.from(await file.arrayBuffer());
   if (buffer.length === 0 || buffer.length > MAX_BYTES) {
@@ -121,7 +113,7 @@ export async function POST(request: Request) {
     ...content,
     meta: {
       ...content.meta,
-      templateSelectionComplete: false,
+      templateSelectionComplete: true,
     },
   };
 

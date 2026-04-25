@@ -37,6 +37,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (path === "/build" || path.startsWith("/build/")) {
+    return NextResponse.next();
+  }
+
   if (path === "/admin" || path.startsWith("/admin/login")) {
     return NextResponse.next();
   }

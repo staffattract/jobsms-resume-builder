@@ -10,6 +10,12 @@ import {
 } from "react";
 import type { ResumeContent } from "@/lib/resume/types";
 import { updateResumeContent, updateResumeTitle } from "@/lib/resume/actions";
+import { saveLocalResumeDraft } from "@/lib/resume/local-draft";
+import {
+  publicFetchBullet,
+  publicFetchSummary,
+  publicFetchTailor,
+} from "@/lib/builder/public-ai";
 import { ContactStep } from "@/components/resume/steps/ContactStep";
 import { TargetStep } from "@/components/resume/steps/TargetStep";
 import { SummaryStep } from "@/components/resume/steps/SummaryStep";
@@ -48,6 +54,11 @@ type Props = {
   resumeId: string;
   initialTitle: string;
   initialContent: ResumeContent;
+  /** Guest /build: localStorage + public AI APIs (no account). */
+  publicBuilder?: {
+    storageKey: string;
+    onStartOver: () => void;
+  };
 };
 
 function snapshot(title: string, content: ResumeContent) {
@@ -97,6 +108,7 @@ export function ResumeEditorShell({
   resumeId,
   initialTitle,
   initialContent,
+  publicBuilder,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState<ResumeContent>(initialContent);
@@ -160,6 +172,25 @@ export function ResumeEditorShell({
     setSaveStatus("saving");
     setErrorMessage(null);
     try {
+      if (publicBuilder) {
+        saveLocalResumeDraft(
+          { title: payload.title, content: payload.content },
+          publicBuilder.storageKey,
+        );
+        if (gen !== saveGeneration.current) {
+          return false;
+        }
+        lastSavedSnapshot.current = snapshot(payload.title, payload.content);
+        setSaveStatus("saved");
+        if (savedClearTimer.current) {
+          clearTimeout(savedClearTimer.current);
+        }
+        savedClearTimer.current = setTimeout(() => {
+          setSaveStatus("idle");
+          savedClearTimer.current = null;
+        }, SAVED_MSG_MS);
+        return true;
+      }
       await updateResumeTitle(resumeId, payload.title);
       await updateResumeContent(resumeId, payload.content);
       if (gen !== saveGeneration.current) {
@@ -183,7 +214,7 @@ export function ResumeEditorShell({
       setErrorMessage("Could not save. Check your connection and try again.");
       return false;
     }
-  }, [resumeId, title, content, stepIndex]);
+  }, [resumeId, title, content, stepIndex, publicBuilder]);
 
   const goToStep = useCallback((i: number) => {
     const next = Math.min(Math.max(i, 0), STEP_LABELS.length - 1);
@@ -415,10 +446,28 @@ export function ResumeEditorShell({
         resumeId={resumeId}
         content={content}
         onApply={applyTailor}
+        fetchTailor={publicBuilder ? publicFetchTailor : undefined}
       />
       <PdfPaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} />
 
       <header className="mb-6 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 md:p-6">
+        {publicBuilder ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-4 dark:border-zinc-800">
+            <Link
+              href="/"
+              className="text-sm font-semibold text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            >
+              ← Home
+            </Link>
+            <button
+              type="button"
+              onClick={publicBuilder.onStartOver}
+              className="text-sm font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-900 hover:underline dark:text-zinc-500 dark:hover:text-zinc-200"
+            >
+              Start over
+            </button>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
             <label htmlFor="resume-title" className={labelClass}>
@@ -440,12 +489,14 @@ export function ResumeEditorShell({
               >
                 {saveStatusLabel}
               </span>
-              <Link
-                href={`/resumes/${resumeId}/template?change=1`}
-                className={`${btnSecondary} inline-flex items-center justify-center no-underline`}
-              >
-                Change template
-              </Link>
+              {publicBuilder ? null : (
+                <Link
+                  href={`/resumes/${resumeId}/template?change=1`}
+                  className={`${btnSecondary} inline-flex items-center justify-center no-underline`}
+                >
+                  Change template
+                </Link>
+              )}
               <button
                 type="button"
                 className={btnSecondary}
@@ -649,6 +700,9 @@ export function ResumeEditorShell({
                   onChange={(summary) =>
                     setContent((c) => ({ ...c, summary }))
                   }
+                  fetchSummarySuggestion={
+                    publicBuilder ? publicFetchSummary : undefined
+                  }
                 />
               )}
               {clampedStep === 3 && (
@@ -657,6 +711,9 @@ export function ResumeEditorShell({
                   value={content.experience}
                   onChange={(experience) =>
                     setContent((c) => ({ ...c, experience }))
+                  }
+                  fetchBulletSuggestion={
+                    publicBuilder ? publicFetchBullet : undefined
                   }
                 />
               )}

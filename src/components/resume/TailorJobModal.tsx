@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ResumeContent } from "@/lib/resume/types";
-import {
-  tailorToJobAction,
-  type TailorResult,
-} from "@/lib/ai/actions";
+import { tailorToJobAction, type TailorResult } from "@/lib/ai/actions";
 import {
   btnPrimary,
   btnSecondary,
@@ -19,6 +16,13 @@ type Props = {
   resumeId: string;
   content: ResumeContent;
   onApply: (data: TailorResult) => void;
+  /** When set, used instead of the logged-in server action (e.g. public /build). */
+  fetchTailor?: (
+    jobDescription: string,
+    content: ResumeContent,
+  ) => Promise<
+    { ok: true; data: TailorResult } | { ok: false; error: string }
+  >;
 };
 
 export function TailorJobModal({
@@ -27,6 +31,7 @@ export function TailorJobModal({
   resumeId,
   content,
   onApply,
+  fetchTailor,
 }: Props) {
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,7 +56,9 @@ export function TailorJobModal({
   async function run() {
     setLoading(true);
     setError(null);
-    const r = await tailorToJobAction(resumeId, jobDescription, content);
+    const r = fetchTailor
+      ? await fetchTailor(jobDescription, content)
+      : await tailorToJobAction(resumeId, jobDescription, content);
     setLoading(false);
     if (!r.ok) {
       setError(r.error);

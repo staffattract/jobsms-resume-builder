@@ -10,6 +10,11 @@ type Props = {
   resumeContent: ResumeContent;
   value: ResumeSummary;
   onChange: (next: ResumeSummary) => void;
+  /** When set, used instead of the logged-in server action (e.g. public /build). */
+  fetchSummarySuggestion?: (content: ResumeContent) => Promise<
+    | { ok: true; data: { suggestion: string } }
+    | { ok: false; error: string }
+  >;
 };
 
 export function SummaryStep({
@@ -17,6 +22,7 @@ export function SummaryStep({
   resumeContent,
   value,
   onChange,
+  fetchSummarySuggestion,
 }: Props) {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
@@ -41,7 +47,9 @@ export function SummaryStep({
       <AiSuggestionInline
         runLabel="Draft summary with AI"
         onGenerate={async () => {
-          const r = await generateSummaryAction(resumeId, resumeContent);
+          const r = fetchSummarySuggestion
+            ? await fetchSummarySuggestion(resumeContent)
+            : await generateSummaryAction(resumeId, resumeContent);
           return r.ok
             ? { ok: true, text: r.data.suggestion }
             : { ok: false, error: r.error };

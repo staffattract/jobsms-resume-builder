@@ -25,7 +25,7 @@ export async function createResume() {
       schemaVersion: 1,
     },
   });
-  redirect(`/resumes/${resume.id}/template`);
+  redirect(`/resumes/${resume.id}`);
 }
 
 export async function selectResumeTemplate(formData: FormData) {

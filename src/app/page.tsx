@@ -41,7 +41,7 @@ export default async function Home() {
       ? "/verify-email"
       : user
         ? "/resumes"
-        : "/register";
+        : "/build";
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-100 antialiased">

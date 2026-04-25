@@ -17,9 +17,19 @@ type Props = {
   resumeId: string;
   value: ResumeContent["experience"];
   onChange: (next: ResumeContent["experience"]) => void;
+  /** When set, used instead of the logged-in server action (e.g. public /build). */
+  fetchBulletSuggestion?: (bulletText: string) => Promise<
+    | { ok: true; data: { suggestion: string } }
+    | { ok: false; error: string }
+  >;
 };
 
-export function ExperienceStep({ resumeId, value, onChange }: Props) {
+export function ExperienceStep({
+  resumeId,
+  value,
+  onChange,
+  fetchBulletSuggestion,
+}: Props) {
   function updateItem(id: string, patch: Partial<ExperienceItem>) {
     onChange({
       items: value.items.map((item) =>
@@ -170,7 +180,9 @@ export function ExperienceStep({ resumeId, value, onChange }: Props) {
                   <AiSuggestionInline
                     runLabel="Sharpen this bullet with AI"
                     onGenerate={async () => {
-                      const r = await improveBulletAction(resumeId, b.text);
+                      const r = fetchBulletSuggestion
+                        ? await fetchBulletSuggestion(b.text)
+                        : await improveBulletAction(resumeId, b.text);
                       return r.ok
                         ? { ok: true, text: r.data.suggestion }
                         : { ok: false, error: r.error };

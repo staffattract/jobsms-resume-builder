@@ -4,6 +4,7 @@ import {
   ASSISTANT_STYLE,
   generateSummaryUserPrompt,
   improveBulletUserPrompt,
+  scratchBuildUserPrompt,
   tailorToJobUserPrompt,
   uploadResumeImproveUserPrompt,
 } from "@/lib/ai/prompts";
@@ -11,12 +12,15 @@ import {
   MAX_BULLET_CHARS,
   MAX_JOB_DESCRIPTION_CHARS,
   MAX_RESUME_JSON_CHARS,
+  MAX_SCRATCH_CONTEXT_CHARS,
+  MAX_SCRATCH_TITLE,
   MAX_UPLOAD_RESUME_TEXT,
   truncate,
 } from "@/lib/ai/limits";
 import { parseTailorJson } from "@/lib/ai/json-parse";
 import { parseUploadResumeJson } from "@/lib/ai/parse-upload-resume-json";
 import { ensureAllResumeIds } from "@/lib/resume/ensure-resume-ids";
+import { coerceResumeTemplateId } from "@/lib/resume/templates/registry";
 import {
   normalizeResumeContent,
   type ResumeContent,
@@ -130,4 +134,39 @@ export async function improveUploadedResumeToContent(
   }
   const normalized = normalizeResumeContent(parsed);
   return ensureAllResumeIds(normalized);
+}
+
+export async function generateScratchResumeContent(
+  provider: AIProvider,
+  jobTitle: string,
+  experienceContext: string,
+): Promise<ResumeContent> {
+  const title = truncate(jobTitle.trim(), MAX_SCRATCH_TITLE);
+  if (!title.trim()) {
+    throw new Error("Job title is required");
+  }
+  const ctx = truncate(experienceContext.trim(), MAX_SCRATCH_CONTEXT_CHARS);
+  const raw = await run(
+    provider,
+    scratchBuildUserPrompt(title, ctx),
+    0.35,
+  );
+  let parsed: unknown;
+  try {
+    parsed = parseUploadResumeJson(raw);
+  } catch {
+    throw new Error("Could not parse AI response as resume JSON");
+  }
+  const normalized = normalizeResumeContent(parsed);
+  const withIds = ensureAllResumeIds(normalized);
+  const out: ResumeContent = {
+    ...withIds,
+    target: { ...withIds.target, jobTitle: withIds.target.jobTitle ?? title },
+    meta: {
+      ...withIds.meta,
+      templateId: coerceResumeTemplateId(withIds.meta.templateId),
+      templateSelectionComplete: true,
+    },
+  };
+  return out;
 }

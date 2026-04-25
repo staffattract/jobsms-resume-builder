@@ -87,7 +87,7 @@ export function defaultResumeContent(): ResumeContent {
     meta: {
       lastStepIndex: 0,
       templateId: DEFAULT_RESUME_TEMPLATE_ID,
-      templateSelectionComplete: false,
+      templateSelectionComplete: true,
     },
   };
 }
