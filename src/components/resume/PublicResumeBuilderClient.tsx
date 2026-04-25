@@ -14,6 +14,7 @@ import {
   normalizeResumeContent,
   type ResumeContent,
 } from "@/lib/resume/types";
+import { hasMeaningfulBuildContent } from "@/lib/resume/derive-resume-list-title";
 import {
   LOCAL_RESUME_DRAFT_KEY,
   clearLocalResumeDraft,
@@ -59,27 +60,44 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
   const [initialContent, setInitialContent] = useState<ResumeContent>(defaultResumeContent);
   const [initialScreen, setInitialScreen] = useState<GuidedScreen>(defaultScreen);
   const [initialLinkedResumeId, setInitialLinkedResumeId] = useState<string | null>(null);
+  const [hasUnfinishedDraft, setHasUnfinishedDraft] = useState(false);
   const [mountKey, setMountKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const d = loadLocalResumeDraft(LOCAL_RESUME_DRAFT_KEY);
+
     if (d) {
       setInitialContent(d.content);
       setInitialLinkedResumeId(d.linkedResumeId ?? null);
       if (d.ui?.phase === "interview" || d.ui?.phase === "done") {
-        setFlow("guided");
         setInitialScreen(resolveScreenFromDraft(d.ui));
-      } else if (hasMeaningfulContent(d.content)) {
-        setFlow("guided");
+      } else {
         setInitialScreen(defaultScreen());
       }
     } else {
+      setInitialContent(defaultResumeContent());
+      setInitialScreen(defaultScreen());
       setInitialLinkedResumeId(null);
     }
+
+    const hasUnfinished = !!d && (d.ui?.phase === "interview" || d.ui?.phase === "done" || hasMeaningfulBuildContent(d.content));
+    setHasUnfinishedDraft(hasUnfinished);
+
+    if (uploadIntent) {
+      setFlow("start");
+    } else if (d && (d.ui?.phase === "interview" || d.ui?.phase === "done")) {
+      setFlow("guided");
+    } else if (d && hasMeaningfulBuildContent(d.content)) {
+      setFlow("guided");
+      setInitialScreen(defaultScreen());
+    } else {
+      setFlow("start");
+    }
+
     setBooted(true);
-  }, []);
+  }, [uploadIntent]);
 
   const handleUploadFile = useCallback(
     async (file: File) => {
@@ -111,6 +129,7 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
         });
         setInitialScreen(defaultScreen());
         setInitialLinkedResumeId(null);
+        setHasUnfinishedDraft(hasMeaningfulBuildContent(next));
         setMountKey((k) => k + 1);
         setFlow("guided");
       } catch {
@@ -126,6 +145,7 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
     setInitialContent(defaultResumeContent());
     setInitialScreen(defaultScreen());
     setInitialLinkedResumeId(null);
+    setHasUnfinishedDraft(false);
     setMountKey((k) => k + 1);
     setFlow("guided");
     setError(null);
@@ -136,8 +156,14 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
     setInitialContent(defaultResumeContent());
     setInitialScreen(defaultScreen());
     setInitialLinkedResumeId(null);
+    setHasUnfinishedDraft(false);
     setFlow("start");
     setError(null);
+  }, []);
+
+  const onContinueUnfinishedResume = useCallback(() => {
+    setError(null);
+    setFlow("guided");
   }, []);
 
   if (!booted) {
@@ -151,11 +177,13 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
       {flow === "start" ? (
         <ResumeBuilderStartView
           uploadIntent={uploadIntent}
+          hasUnfinishedDraft={hasUnfinishedDraft}
           loading={loading}
           error={error}
           onClearError={() => setError(null)}
           onStartGuided={onStartGuided}
           onUploadFile={handleUploadFile}
+          onContinueUnfinishedResume={onContinueUnfinishedResume}
         />
       ) : (
         <GuidedResumeBuilder
@@ -172,15 +200,3 @@ export function PublicResumeBuilderClient({ isLoggedIn = false }: PublicResumeBu
   );
 }
 
-function hasMeaningfulContent(c: ResumeContent): boolean {
-  if ((c.contact.fullName ?? "").trim()) {
-    return true;
-  }
-  if ((c.target.jobTitle ?? "").trim()) {
-    return true;
-  }
-  if (c.experience.items.length) {
-    return true;
-  }
-  return false;
-}

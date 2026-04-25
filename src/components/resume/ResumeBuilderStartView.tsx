@@ -1,40 +1,100 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { labelClass, btnSecondary } from "@/components/resume/form-classes";
+import { btnPrimary, labelClass, btnSecondary } from "@/components/resume/form-classes";
 
 const cardBase =
   "w-full rounded-2xl border border-zinc-200/90 bg-white p-5 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6";
 
-type Sub = "main" | "upload";
+type Sub = "main" | "upload" | "unfinishedChoice";
 
 type Props = {
   uploadIntent: boolean;
+  /** There is a local guided draft the user may want to keep. */
+  hasUnfinishedDraft: boolean;
   loading: boolean;
   error: string | null;
   onClearError: () => void;
   onStartGuided: () => void;
   onUploadFile: (file: File) => void;
+  onContinueUnfinishedResume: () => void;
 };
+
+function initialSub(
+  uploadIntent: boolean,
+  hasUnfinishedDraft: boolean,
+): Sub {
+  if (uploadIntent && hasUnfinishedDraft) {
+    return "unfinishedChoice";
+  }
+  if (uploadIntent) {
+    return "upload";
+  }
+  return "main";
+}
 
 export function ResumeBuilderStartView({
   uploadIntent,
+  hasUnfinishedDraft,
   loading,
   error,
   onClearError,
   onStartGuided,
   onUploadFile,
+  onContinueUnfinishedResume,
 }: Props) {
-  const [sub, setSub] = useState<Sub>(() => (uploadIntent ? "upload" : "main"));
+  const [sub, setSub] = useState<Sub>(() =>
+    initialSub(uploadIntent, hasUnfinishedDraft),
+  );
 
   useEffect(() => {
-    if (uploadIntent) {
-      setSub("upload");
+    setSub(initialSub(uploadIntent, hasUnfinishedDraft));
+  }, [uploadIntent, hasUnfinishedDraft]);
+
+  const backFromUpload = () => {
+    onClearError();
+    if (uploadIntent && hasUnfinishedDraft) {
+      setSub("unfinishedChoice");
+    } else {
+      setSub("main");
     }
-  }, [uploadIntent]);
+  };
 
   return (
     <div className="mx-auto max-w-lg">
+      {sub === "unfinishedChoice" && uploadIntent && hasUnfinishedDraft ? (
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+            New resume from a file
+          </h1>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            You have an unfinished resume. Uploading a resume will start a new draft.
+          </p>
+          <div className="mt-8 flex flex-col gap-3">
+            <button
+              type="button"
+              className={btnPrimary}
+              onClick={() => {
+                onClearError();
+                setSub("upload");
+              }}
+            >
+              Upload resume
+            </button>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => {
+                onClearError();
+                onContinueUnfinishedResume();
+              }}
+            >
+              Continue unfinished resume
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {sub === "main" ? (
         <>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
@@ -83,10 +143,7 @@ export function ResumeBuilderStartView({
         <div>
           <button
             type="button"
-            onClick={() => {
-              onClearError();
-              setSub("main");
-            }}
+            onClick={backFromUpload}
             className="mb-4 text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             ← Back
@@ -124,7 +181,18 @@ export function ResumeBuilderStartView({
           <button
             type="button"
             className={`${btnSecondary} mt-6`}
-            onClick={() => onStartGuided()}
+            onClick={() => {
+              if (hasUnfinishedDraft) {
+                if (
+                  !window.confirm(
+                    "This will replace your current saved draft with a blank form. Continue?",
+                  )
+                ) {
+                  return;
+                }
+              }
+              onStartGuided();
+            }}
             disabled={loading}
           >
             Skip — start with a blank form
