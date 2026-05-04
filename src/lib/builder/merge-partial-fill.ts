@@ -1,3 +1,4 @@
+import { MAX_BULLET_CHARS } from "@/lib/ai/limits";
 import { ensureAllResumeIds } from "@/lib/resume/ensure-resume-ids";
 import type { ExperienceBullet, ResumeContent } from "@/lib/resume/types";
 
@@ -5,9 +6,19 @@ function t(s: string | undefined | null): string {
   return (s ?? "").trim();
 }
 
+function clampBullet(text: string): string {
+  if (text.length <= MAX_BULLET_CHARS) {
+    return text;
+  }
+  return text.slice(0, MAX_BULLET_CHARS);
+}
+
 /**
  * Merges AI "fill" output into the user's draft. Factual/identity fields always
  * stay on the user; summary/skills/bullets can be taken from the AI.
+ *
+ * Never appends AI-only bullets beyond the user's bullet count — prevents
+ * hallucinated extra accomplishments.
  */
 export function mergePartialFill(user: ResumeContent, ai: ResumeContent): ResumeContent {
   const out = ensureAllResumeIds(
@@ -35,14 +46,16 @@ export function mergePartialFill(user: ResumeContent, ai: ResumeContent): Resume
       if (!ab) {
         return b;
       }
-      const at = t(ab.text);
-      return { ...b, text: at || t(b.text) || b.text };
-    });
-    for (let j = u.bullets.length; j < a.bullets.length; j += 1) {
-      if (t(a.bullets[j]!.text)) {
-        nextBullets.push({ ...a.bullets[j]! });
+      const at = clampBullet(t(ab.text));
+      const userTxt = t(b.text);
+      if (!userTxt && at) {
+        return { ...b, text: at };
       }
-    }
+      return {
+        ...b,
+        text: clampBullet(at || userTxt || b.text),
+      };
+    });
     return {
       ...u,
       employer: t(u.employer),

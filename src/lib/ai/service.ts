@@ -21,12 +21,10 @@ import {
 } from "@/lib/ai/limits";
 import { parseTailorJson } from "@/lib/ai/json-parse";
 import { parseUploadResumeJson } from "@/lib/ai/parse-upload-resume-json";
-import { ensureAllResumeIds } from "@/lib/resume/ensure-resume-ids";
+import { clampResumeContentDeep } from "@/lib/resume/content-boundaries";
+import { finalizeStructuredAiResume } from "@/lib/resume/finalize-ai-resume-json";
 import { coerceResumeTemplateId } from "@/lib/resume/templates/registry";
-import {
-  normalizeResumeContent,
-  type ResumeContent,
-} from "@/lib/resume/types";
+import { type ResumeContent } from "@/lib/resume/types";
 
 let cachedProvider: AIProvider | null = null;
 
@@ -134,8 +132,7 @@ export async function improveUploadedResumeToContent(
   } catch {
     throw new Error("Could not parse AI response as resume JSON");
   }
-  const normalized = normalizeResumeContent(parsed);
-  return ensureAllResumeIds(normalized);
+  return finalizeStructuredAiResume(parsed);
 }
 
 export async function generateScratchResumeContent(
@@ -159,18 +156,17 @@ export async function generateScratchResumeContent(
   } catch {
     throw new Error("Could not parse AI response as resume JSON");
   }
-  const normalized = normalizeResumeContent(parsed);
-  const withIds = ensureAllResumeIds(normalized);
+  const base = finalizeStructuredAiResume(parsed);
   const out: ResumeContent = {
-    ...withIds,
-    target: { ...withIds.target, jobTitle: withIds.target.jobTitle ?? title },
+    ...base,
+    target: { ...base.target, jobTitle: base.target.jobTitle ?? title },
     meta: {
-      ...withIds.meta,
-      templateId: coerceResumeTemplateId(withIds.meta.templateId),
+      ...base.meta,
+      templateId: coerceResumeTemplateId(base.meta.templateId),
       templateSelectionComplete: true,
     },
   };
-  return out;
+  return clampResumeContentDeep(out);
 }
 
 export async function fillPartialResumeFromAi(
@@ -193,6 +189,6 @@ export async function fillPartialResumeFromAi(
   } catch {
     throw new Error("Could not parse AI response as resume JSON");
   }
-  const aiNorm = ensureAllResumeIds(normalizeResumeContent(parsed));
-  return mergePartialFill(user, aiNorm);
+  const aiNorm = finalizeStructuredAiResume(parsed);
+  return clampResumeContentDeep(mergePartialFill(user, aiNorm));
 }

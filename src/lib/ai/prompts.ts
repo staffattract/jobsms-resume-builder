@@ -67,6 +67,8 @@ Return ONLY valid JSON (no markdown code fences). The JSON must match this shape
 Rules:
 - Improve bullet wording (clear, achievement-oriented); tighten phrasing; fix obvious typos.
 - Keep employers, titles, institutions, degrees, and dates truthful to the source — do not invent jobs, companies, schools, or metrics.
+- Do not invent certifications, licenses, professional registrations, tools, employers, titles, institutions, dates, degrees, or fields absent from the source text.
+- If a fact (including numbers, KPIs, or dates) did not clearly appear in the source, omit it from bullets and summaries rather than guessing.
 - If the source omits data, use empty strings or empty arrays; "meta.lastStepIndex" should be 0 and "meta.templateId" should be "classic".
 - "summary.text": 2–4 professional sentences derived only from the provided facts.
 - Every "id" in arrays must be a unique non-empty string (any stable string is fine).`;
@@ -104,7 +106,7 @@ Rules:
 - "summary.text": 2–4 strong, professional sentences. Use only facts from pasted text; if there is no paste, write a tight summary of intent and fit for the target role (no made-up employers or schools).
 ${
   context
-    ? "- Derive 2–3 experience items from the pasted text. Use strong action verbs, clear results. Do NOT invent company names, titles, or dates: only use what the text supports. Leave unknown dates blank.\n- Skills: group relevant skills from the paste and job title. If a skill is not supported, omit it."
+    ? "- Derive 2–3 experience items from the pasted text. Use strong action verbs, clear results. Do NOT invent company names, titles, or dates: only use what the text supports. Leave unknown dates blank.\n- Do not add percentages, KPIs, revenue figures, certifications, honors, patents, clearance levels, or metrics that do not plainly appear in the paste.\n- Skills: group relevant skills from the paste and job title. If a skill is not supported by the paste or title alone, omit it."
     : '- Include 2–3 "experience" items: use employer "—" and title that indicates where to add the user\'s real role (e.g. "Add your title"), with 2–4 bullets per job describing competencies typical for the target title — as placeholders the user will replace, not as factual employment history. Leave dates empty. Do not name real companies.\n- Skills: 1–2 groups with items inferred only from the job title (e.g. tools/domains) — no false employers.\n'
 }
 - "meta.lastStepIndex": 0, "meta.templateId": "professional" (or "classic" if you prefer; must be a string).
@@ -124,6 +126,7 @@ Rules (strict):
 - "summary.text": if the user left it empty, write 2–4 sentences using only facts in the user JSON. If the user has text, you may lightly tighten for clarity but do not add new facts.
 - "skills.groups": if the user has no real skills, create 1–2 groups with items that are clearly implied by the stated role and responsibilities. If the user has skills, keep them and you may rephrase; add only terms clearly implied.
 - "experience.items[].bullets": improve wording and impact; use strong action verbs. Do not add employers or roles the user did not list. You may add bullets only where the user already described work in rough text, or rephrase existing bullet text.
+- Do not introduce new percentages, dollar amounts, KPIs, certifications, licenses, honors, patents, clearance levels, tool names, company names, job titles, school names, degree names, fields of study, or date ranges unless they already appear as non-empty strings in the user JSON (verbatim values you must not alter when present).
 - Preserve every "id" on items, groups, and bullets. Same array lengths for experience and education as the user (unless the user has zero — then return zero for that section).
 - "meta": copy from the user; keep "lastStepIndex" 0, keep "templateId" as given.
 

@@ -92,6 +92,186 @@ export function defaultResumeContent(): ResumeContent {
   };
 }
 
+/** Bounds for salvaging AI JSON (finer limits applied in `clampResumeContentDeep`). */
+const MAX_EXP_ITEMS_SALVAGE = 32;
+const MAX_BULLETS_SALVAGE = 28;
+const MAX_EDU_ITEMS_SALVAGE = 20;
+const MAX_SKILL_GROUPS_SALVAGE = 32;
+const MAX_SKILL_ITEMS_PER_GROUP_SALVAGE = 60;
+const MAX_CONTACT_LINKS_SALVAGE = 24;
+/** Pre-clamp field width for noisy model output. */
+const MAX_LOOSE_TEXT = 800;
+
+function coerceLooseText(v: unknown, max: number): string {
+  if (typeof v === "string") {
+    return v.trim().slice(0, max);
+  }
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return String(v).trim().slice(0, max);
+  }
+  return "";
+}
+
+function coerceOptionalString(v: unknown, max: number): string | undefined {
+  const s = coerceLooseText(v, max);
+  return s || undefined;
+}
+
+function salvageExperienceBullets(raw: unknown): ExperienceBullet[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: ExperienceBullet[] = [];
+  for (const b of raw) {
+    if (!b || typeof b !== "object") {
+      continue;
+    }
+    const o = b as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim() : "";
+    const text = coerceLooseText(o.text, MAX_LOOSE_TEXT);
+    out.push({ id, text });
+    if (out.length >= MAX_BULLETS_SALVAGE) {
+      break;
+    }
+  }
+  return out;
+}
+
+function salvageExperienceRows(raw: unknown): ExperienceItem[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: ExperienceItem[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") {
+      continue;
+    }
+    const it = x as Record<string, unknown>;
+    const id = typeof it.id === "string" ? it.id.trim() : "";
+    const employer = coerceLooseText(it.employer, MAX_LOOSE_TEXT) || "—";
+    const title = coerceLooseText(it.title, MAX_LOOSE_TEXT);
+
+    const bullets = salvageExperienceBullets(it.bullets);
+    const row: ExperienceItem = {
+      id,
+      employer,
+      title,
+      bullets,
+    };
+
+    const location = coerceOptionalString(it.location, MAX_LOOSE_TEXT);
+    if (location) {
+      row.location = location;
+    }
+    const start = coerceOptionalString(it.startDate, 120);
+    if (start) {
+      row.startDate = start;
+    }
+    if (it.endDate === null) {
+      row.endDate = null;
+    } else {
+      const endStr = coerceOptionalString(it.endDate, 120);
+      if (endStr !== undefined) {
+        row.endDate = endStr;
+      }
+    }
+
+    out.push(row);
+    if (out.length >= MAX_EXP_ITEMS_SALVAGE) {
+      break;
+    }
+  }
+  return out;
+}
+
+function salvageEducationRows(raw: unknown): EducationItem[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: EducationItem[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") {
+      continue;
+    }
+    const it = x as Record<string, unknown>;
+    const id = typeof it.id === "string" ? it.id.trim() : "";
+    const institution = coerceLooseText(it.institution, MAX_LOOSE_TEXT);
+    const row: EducationItem = {
+      id,
+      institution,
+    };
+
+    const degree = coerceOptionalString(it.degree, 400);
+    if (degree !== undefined) {
+      row.degree = degree;
+    }
+    const field = coerceOptionalString(it.field, 400);
+    if (field !== undefined) {
+      row.field = field;
+    }
+    const s = coerceOptionalString(it.startDate, 120);
+    if (s !== undefined) {
+      row.startDate = s;
+    }
+    const e = coerceOptionalString(it.endDate, 120);
+    if (e !== undefined) {
+      row.endDate = e;
+    }
+    const details = coerceOptionalString(it.details, 8_000);
+    if (details !== undefined) {
+      row.details = details;
+    }
+
+    out.push(row);
+    if (out.length >= MAX_EDU_ITEMS_SALVAGE) {
+      break;
+    }
+  }
+  return out;
+}
+
+function salvageSkillGroups(rows: unknown): SkillsGroup[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  const out: SkillsGroup[] = [];
+  for (const x of rows) {
+    if (!x || typeof x !== "object") {
+      continue;
+    }
+    const g = x as Record<string, unknown>;
+    const id = typeof g.id === "string" ? g.id.trim() : "";
+    let name = coerceLooseText(g.name, MAX_LOOSE_TEXT);
+
+    const items: string[] = [];
+    if (Array.isArray(g.items)) {
+      for (const ri of g.items) {
+        const s = coerceLooseText(ri, 400);
+        if (s) {
+          items.push(s);
+        }
+        if (items.length >= MAX_SKILL_ITEMS_PER_GROUP_SALVAGE) {
+          break;
+        }
+      }
+    }
+
+    if (!name && items.length === 0) {
+      continue;
+    }
+    if (!name) {
+      name = "Skills";
+    }
+
+    out.push({ id, name, items });
+    if (out.length >= MAX_SKILL_GROUPS_SALVAGE) {
+      break;
+    }
+  }
+  return out;
+}
+
+/** Coerces persisted or AI-shaped JSON into a ResumeContent scaffold. */
 export function normalizeResumeContent(raw: unknown): ResumeContent {
   const base = defaultResumeContent();
   if (!raw || typeof raw !== "object") {
@@ -121,125 +301,61 @@ export function normalizeResumeContent(raw: unknown): ResumeContent {
     ? (r.meta as Record<string, unknown>)
     : {}) as Record<string, unknown>;
 
+  const summaryTextUnknown = summary.text;
+
   return {
     contact: {
       ...base.contact,
-      fullName: typeof contact.fullName === "string" ? contact.fullName : undefined,
-      email: typeof contact.email === "string" ? contact.email : undefined,
-      phone: typeof contact.phone === "string" ? contact.phone : undefined,
-      location: typeof contact.location === "string" ? contact.location : undefined,
+      fullName: coerceOptionalString(contact.fullName, MAX_LOOSE_TEXT),
+      email: coerceOptionalString(contact.email, MAX_LOOSE_TEXT),
+      phone: coerceOptionalString(contact.phone, MAX_LOOSE_TEXT),
+      location: coerceOptionalString(contact.location, MAX_LOOSE_TEXT),
       links: Array.isArray(contact.links)
         ? (contact.links as unknown[])
-            .filter((x): x is ContactLink =>
-              !!x &&
-              typeof x === "object" &&
-              typeof (x as ContactLink).id === "string",
-            )
-            .map((l) => ({
-              id: l.id,
-              label: typeof l.label === "string" ? l.label : undefined,
-              url: typeof l.url === "string" ? l.url : undefined,
-            }))
+            .flatMap((x): ContactLink[] => {
+              if (!x || typeof x !== "object") {
+                return [];
+              }
+              const l = x as Record<string, unknown>;
+              const id = typeof l.id === "string" ? l.id.trim() : "";
+              return [
+                {
+                  id,
+                  label: coerceOptionalString(l.label, 400),
+                  url: coerceOptionalString(l.url, 2_048),
+                },
+              ];
+            })
+            .slice(0, MAX_CONTACT_LINKS_SALVAGE)
         : base.contact.links,
     },
     target: {
-      jobTitle: typeof target.jobTitle === "string" ? target.jobTitle : undefined,
-      company: typeof target.company === "string" ? target.company : undefined,
-      notes: typeof target.notes === "string" ? target.notes : undefined,
+      jobTitle: coerceOptionalString(target.jobTitle, 400),
+      company: coerceOptionalString(target.company, 400),
+      notes: coerceOptionalString(target.notes, 800),
     },
     summary: {
       text:
-        typeof summary.text === "string" ? summary.text : base.summary.text,
+        typeof summaryTextUnknown === "string"
+          ? summaryTextUnknown
+          : typeof summaryTextUnknown === "number" &&
+              Number.isFinite(summaryTextUnknown)
+            ? String(summaryTextUnknown)
+            : base.summary.text,
     },
     experience: {
-      items: Array.isArray(experience.items)
-        ? (experience.items as unknown[])
-            .map((x): ExperienceItem | null => {
-              if (!x || typeof x !== "object") {
-                return null;
-              }
-              const it = x as Record<string, unknown>;
-              if (
-                typeof it.id !== "string" ||
-                typeof it.employer !== "string" ||
-                typeof it.title !== "string"
-              ) {
-                return null;
-              }
-              const bulletsRaw = Array.isArray(it.bullets) ? it.bullets : [];
-              const bullets = bulletsRaw
-                .filter(
-                  (b): b is ExperienceBullet =>
-                    !!b &&
-                    typeof b === "object" &&
-                    typeof (b as ExperienceBullet).id === "string" &&
-                    typeof (b as ExperienceBullet).text === "string",
-                )
-                .map((b) => ({
-                  id: b.id,
-                  text: b.text,
-                }));
-              const row: ExperienceItem = {
-                id: it.id,
-                employer: it.employer,
-                title: it.title,
-                bullets,
-              };
-              if (typeof it.location === "string") {
-                row.location = it.location;
-              }
-              if (typeof it.startDate === "string") {
-                row.startDate = it.startDate;
-              }
-              if (it.endDate === null) {
-                row.endDate = null;
-              } else if (typeof it.endDate === "string") {
-                row.endDate = it.endDate;
-              }
-              return row;
-            })
-            .filter((x): x is ExperienceItem => x !== null)
-        : base.experience.items,
+      items: salvageExperienceRows(experience.items),
     },
     skills: {
-      groups: Array.isArray(skills.groups)
-        ? (skills.groups as unknown[])
-            .map((x) => {
-              if (
-                !x ||
-                typeof x !== "object" ||
-                typeof (x as SkillsGroup).id !== "string" ||
-                typeof (x as SkillsGroup).name !== "string" ||
-                !Array.isArray((x as SkillsGroup).items)
-              ) {
-                return null;
-              }
-              const items = (x as SkillsGroup).items.filter(
-                (i): i is string => typeof i === "string",
-              );
-              return {
-                id: (x as SkillsGroup).id,
-                name: (x as SkillsGroup).name,
-                items,
-              } satisfies SkillsGroup;
-            })
-            .filter((x): x is SkillsGroup => x !== null)
-        : base.skills.groups,
+      groups: salvageSkillGroups(skills.groups),
     },
     education: {
-      items: Array.isArray(education.items)
-        ? (education.items as unknown[]).filter(
-            (x): x is EducationItem =>
-              !!x &&
-              typeof x === "object" &&
-              typeof (x as EducationItem).id === "string" &&
-              typeof (x as EducationItem).institution === "string",
-          )
-        : base.education.items,
+      items: salvageEducationRows(education.items),
     },
     meta: {
       lastStepIndex:
         typeof meta.lastStepIndex === "number" &&
+        Number.isFinite(meta.lastStepIndex) &&
         meta.lastStepIndex >= 0 &&
         meta.lastStepIndex <= 6
           ? meta.lastStepIndex
