@@ -85,6 +85,7 @@ enum AnalyticsEventType {
   EMAIL_CONFIRMATION_CLICKED
   PURCHASE_ONE_TIME_SUCCESS
   PURCHASE_SUBSCRIPTION_SUCCESS
+  PUBLIC_AI_RATE_LIMIT_HIT
 }
 
 /// Prevents duplicate application of Stripe `checkout.session.completed` (e.g. credit double-grant).

@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AnalyticsEventType" ADD VALUE IF NOT EXISTS 'PUBLIC_AI_RATE_LIMIT_HIT';
