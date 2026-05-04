@@ -55,6 +55,7 @@ export function middleware(request: NextRequest) {
   if (
     path.startsWith("/dashboard") ||
     path.startsWith("/resumes") ||
+    path.startsWith("/jobs") ||
     path.startsWith("/account") ||
     path.startsWith("/billing")
   ) {

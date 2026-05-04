@@ -36,6 +36,45 @@ model User {
   resumes Resume[]
   sessions Session[]
   analyticsEvents AnalyticsEvent[]
+  jobInteractions JobInteraction[]
+}
+
+/// User tracking for Employment Alert / Jobs API listings (saved, applied, click).
+model JobInteraction {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  externalJobId String
+
+  title   String
+  company String?
+
+  location String?
+
+  /** Listing apply/detail URL (`JOB/url`); external id is always `JOB/id`. */
+  jobUrl String
+
+  keyword          String
+  searchedLocation String
+  source           String               @default("employment_alert")
+
+  status     JobInteractionStatus @default(NONE)
+  clickedAt  DateTime?
+  appliedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, externalJobId])
+  @@index([userId, status])
+}
+
+enum JobInteractionStatus {
+  NONE
+  SAVED
+  APPLIED
+  IGNORED
 }
 
 /// Single-use password reset token (1h TTL). Lookup by `token` only.

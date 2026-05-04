@@ -24,6 +24,22 @@ Single reference for configuration. Values are read at runtime (build/runtime fo
 | `STRIPE_PRICE_TRIAL_ONE_TIME` | **`getStripePriceTrialOneTime()` — subscription Checkout validates all Stripe price vars before Stripe API call; 503 `STRIPE_CONFIG_INCOMPLETE` if missing** | Subscription Checkout first line item. |
 | `OPENAI_API_KEY` | **`getOpenAiApiKey()` (`requireEnv`)** | AI provider bootstrap (`src/lib/ai/openai-provider.ts`). |
 
+## Employment Alert job search (RSS/XML feed — server-side)
+
+Set these when **`GET /api/jobs/search`** and related tracking routes should reach the vendor feed:
+
+| Variable | Validation | Used for |
+|---------|-------------|----------|
+| `JOB_API_BASE_URL` | **`requireEnv` in jobs config** (`src/lib/jobs/config.ts`) — full script URL **before** query (path usually ends with `.php`), no trailing slash. | Base endpoint for search requests. |
+| `JOB_API_PID` | **`requireEnv`** | Partner **`pid`** query parameter. |
+| `JOB_API_AFF_ID` | **`requireEnv`** | **`aff_id`** query parameter. |
+| `JOB_API_SUB_ID` | **`requireEnv`** | **`sub_id`** query parameter. |
+| `JOB_API_SITE_ID` | **`requireEnv`** | **`siteid`** query parameter. |
+
+If these are unset, **`/api/jobs/search`** responds with **`503`** and code **`JOBS_API_NOT_CONFIGURED`**. Responses are parsed as XML with **`fast-xml-parser`** (`src/lib/jobs/employment-alert-client.ts`). Job identity for storage is **`JOB/id`**, never the **`id`** encoded inside **`JOB/url`**.
+
+Authenticated users also use **`POST /api/jobs/click`** (visit tracking), **`POST /api/jobs/status`** (saved / applied / ignored), persisted in **`JobInteraction`** (see Prisma migrations).
+
 ## Prisma CLI / migrations (`prisma.config.ts`)
 
 | Variable | Notes |

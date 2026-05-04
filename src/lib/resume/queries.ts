@@ -16,6 +16,21 @@ export async function listResumesForCurrentUser() {
   });
 }
 
+/** Full content for tailoring from app surfaces (not for list views). */
+export async function listResumesWithContentForCurrentUser() {
+  const user = await requireUser();
+  const resumes = await prisma.resume.findMany({
+    where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, title: true, content: true },
+  });
+  return resumes.map((r) => ({
+    id: r.id,
+    title: r.title,
+    content: normalizeResumeContent(r.content),
+  }));
+}
+
 export async function getResumeForCurrentUser(resumeId: string) {
   const user = await requireUser();
   const resume = await prisma.resume.findFirst({

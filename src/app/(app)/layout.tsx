@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AppUserMenu } from "@/components/app/AppUserMenu";
 import { requireUser } from "@/lib/auth/require-user";
 import { logoutAction } from "@/lib/auth/form-actions";
@@ -31,6 +30,12 @@ export default async function AppLayout({
                 className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
               >
                 Resumes
+              </Link>
+              <Link
+                href="/jobs"
+                className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+              >
+                Jobs
               </Link>
             </nav>
           </div>

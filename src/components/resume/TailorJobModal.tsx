@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import type { ResumeContent } from "@/lib/resume/types";
 import { tailorToJobAction, type TailorResult } from "@/lib/ai/actions";
 import {
@@ -15,7 +15,9 @@ type Props = {
   onClose: () => void;
   resumeId: string;
   content: ResumeContent;
-  onApply: (data: TailorResult) => void;
+  onApply: (data: TailorResult) => void | Promise<void>;
+  /** Pre-filled JD when opening from a job listing search. */
+  initialJobDescription?: string;
   /** When set, used instead of the logged-in server action (e.g. public /build). */
   fetchTailor?: (
     jobDescription: string,
@@ -31,6 +33,7 @@ export function TailorJobModal({
   resumeId,
   content,
   onApply,
+  initialJobDescription,
   fetchTailor,
 }: Props) {
   const [jobDescription, setJobDescription] = useState("");
@@ -53,6 +56,20 @@ export function TailorJobModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    startTransition(() => {
+      setError(null);
+      setLoading(false);
+      setPhase("paste");
+      setSummaryDraft("");
+      setNotesDraft("");
+      setJobDescription((initialJobDescription ?? "").trim());
+    });
+  }, [open, initialJobDescription]);
+
   async function run() {
     setLoading(true);
     setError(null);
@@ -69,15 +86,21 @@ export function TailorJobModal({
     setPhase("preview");
   }
 
-  function apply() {
+  async function apply() {
     const payload: TailorResult = {
       summary: summaryDraft.trim(),
       ...(notesDraft.trim() !== ""
         ? { alignmentNotes: notesDraft.trim() }
         : {}),
     };
-    onApply(payload);
-    onClose();
+    try {
+      await Promise.resolve(onApply(payload));
+      onClose();
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Could not apply changes — try again.",
+      );
+    }
   }
 
   if (!open) {
