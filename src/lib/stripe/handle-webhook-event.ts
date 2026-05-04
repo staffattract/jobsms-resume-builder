@@ -14,6 +14,14 @@ export async function handleStripeWebhookEvent(
   const stripe = getStripe();
 
   switch (event.type) {
+    case "customer.subscription.created": {
+      const partial = event.data.object as Stripe.Subscription;
+      const sub = await stripe.subscriptions.retrieve(partial.id, {
+        expand: ["items.data.price"],
+      });
+      await syncSubscriptionEntitlementFromStripe(sub);
+      return;
+    }
     case "checkout.session.completed": {
       try {
         await prisma.processedStripeEvent.create({

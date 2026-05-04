@@ -174,7 +174,9 @@ export async function loadAccountBillingForUser(
         subscriptionDetails = {
           status: sub.status,
           cancelAtPeriodEnd: sub.cancel_at_period_end,
-          currentPeriodEnd: new Date(getSubscriptionPeriodEnd(sub)),
+          currentPeriodEnd: new Date(
+            getSubscriptionPeriodEnd(sub, prices?.sub),
+          ),
         };
       } catch {
         subscriptionDetails = null;

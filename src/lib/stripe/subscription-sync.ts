@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { prisma } from "@/lib/db";
+import { getStripePriceMonthlySubscription } from "@/lib/stripe/config";
 import { stripeCustomerIdFromSessionLike } from "@/lib/stripe/customer-id";
 import { getSubscriptionPeriodEnd } from "@/lib/stripe/subscription-period";
 
@@ -50,7 +51,14 @@ export async function syncSubscriptionEntitlementFromStripe(
   if (!user) {
     return;
   }
-  const periodEnd = getSubscriptionPeriodEnd(sub);
+
+  let monthlyPriceId: string | undefined;
+  try {
+    monthlyPriceId = getStripePriceMonthlySubscription();
+  } catch {
+    monthlyPriceId = undefined;
+  }
+  const periodEnd = getSubscriptionPeriodEnd(sub, monthlyPriceId);
   const now = new Date();
   const status = sub.status;
   const hasPaidThroughFuture =
