@@ -2,18 +2,41 @@
  * Transactional email via [Resend](https://resend.com) HTTP API (no extra npm package).
  */
 
+import { optionalEnvTrim } from "@/lib/env/server";
+
 type SendResult = { ok: true } | { ok: false; error: string };
 
-function getAppBaseUrl(): string | null {
-  const pub = process.env.NEXT_PUBLIC_APP_URL?.trim();
+let warnedResendNotConfigured = false;
+let warnedEmailBaseMissing = false;
+
+function warnResendNotConfigured(reason: string): void {
+  if (warnedResendNotConfigured) {
+    return;
+  }
+  warnedResendNotConfigured = true;
+  console.warn(`[email] ${reason}`);
+}
+
+function warnEmailPublicBaseMissing(): void {
+  if (warnedEmailBaseMissing) {
+    return;
+  }
+  warnedEmailBaseMissing = true;
+  console.warn(
+    "[email] No NEXT_PUBLIC_APP_URL, APP_URL, or VERCEL_URL — transactional email links (verification, password reset) cannot be generated.",
+  );
+}
+
+function resolveEmailPublicBase(): string | null {
+  const pub = optionalEnvTrim("NEXT_PUBLIC_APP_URL");
   if (pub) {
     return pub.replace(/\/+$/, "");
   }
-  const explicit = process.env.APP_URL?.trim();
+  const explicit = optionalEnvTrim("APP_URL");
   if (explicit) {
     return explicit.replace(/\/+$/, "");
   }
-  const vercel = process.env.VERCEL_URL?.trim();
+  const vercel = optionalEnvTrim("VERCEL_URL");
   if (vercel) {
     return `https://${vercel.replace(/^\/+/, "")}`;
   }
@@ -21,8 +44,9 @@ function getAppBaseUrl(): string | null {
 }
 
 export function buildPasswordResetUrl(rawToken: string): string | null {
-  const base = getAppBaseUrl();
+  const base = resolveEmailPublicBase();
   if (!base) {
+    warnEmailPublicBaseMissing();
     return null;
   }
   const url = new URL("/reset-password", base);
@@ -31,8 +55,9 @@ export function buildPasswordResetUrl(rawToken: string): string | null {
 }
 
 export function buildConfirmEmailUrl(rawToken: string): string | null {
-  const base = getAppBaseUrl();
+  const base = resolveEmailPublicBase();
   if (!base) {
+    warnEmailPublicBaseMissing();
     return null;
   }
   const url = new URL("/confirm-email", base);
@@ -40,13 +65,27 @@ export function buildConfirmEmailUrl(rawToken: string): string | null {
   return url.toString();
 }
 
+function resendOutboundConfig(): {
+  apiKey: string;
+  from: string;
+} | null {
+  const apiKey = optionalEnvTrim("RESEND_API_KEY");
+  const from = optionalEnvTrim("EMAIL_FROM");
+  if (!apiKey || !from) {
+    warnResendNotConfigured(
+      "RESEND_API_KEY and/or EMAIL_FROM not set — password reset and signup verification emails are disabled.",
+    );
+    return null;
+  }
+  return { apiKey, from };
+}
+
 export async function sendPasswordResetEmail(input: {
   to: string;
   resetUrl: string;
 }): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
-  if (!apiKey || !from) {
+  const cfg = resendOutboundConfig();
+  if (!cfg) {
     return { ok: false, error: "Missing RESEND_API_KEY or EMAIL_FROM" };
   }
 
@@ -62,11 +101,11 @@ If you did not request this, you can ignore this email.`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${cfg.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from,
+        from: cfg.from,
         to: [input.to],
         subject,
         text,
@@ -90,9 +129,8 @@ export async function sendEmailVerificationEmail(input: {
   to: string;
   confirmUrl: string;
 }): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
-  if (!apiKey || !from) {
+  const cfg = resendOutboundConfig();
+  if (!cfg) {
     return { ok: false, error: "Missing RESEND_API_KEY or EMAIL_FROM" };
   }
 
@@ -109,11 +147,11 @@ If you didn't create an account, you can ignore this email.`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${cfg.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from,
+        from: cfg.from,
         to: [input.to],
         subject,
         text,

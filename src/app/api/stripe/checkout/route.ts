@@ -7,6 +7,7 @@ import {
   getAppBaseUrl,
   getStripePriceMonthlySubscription,
   getStripePriceOneTimePdf,
+  getStripePriceTrialOneTime,
 } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/client";
 
@@ -44,15 +45,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  let priceId: string;
+  let stripePriceVars: {
+    oneTimePdf?: string;
+    trialOneTime?: string;
+    monthlySub?: string;
+  };
   try {
-    priceId =
-      parsed.data.kind === "one_time"
-        ? getStripePriceOneTimePdf()
-        : getStripePriceMonthlySubscription();
+    stripePriceVars =
+      parsed.data.kind === "subscription"
+        ? {
+            trialOneTime: getStripePriceTrialOneTime(),
+            monthlySub: getStripePriceMonthlySubscription(),
+          }
+        : { oneTimePdf: getStripePriceOneTimePdf() };
   } catch {
     return NextResponse.json(
-      { error: "Stripe billing is not configured on this server." },
+      {
+        error:
+          "Stripe billing price configuration is incomplete on this server (check STRIPE_PRICE_* env vars).",
+        code: "STRIPE_CONFIG_INCOMPLETE",
+      },
       { status: 503 },
     );
   }
@@ -79,11 +91,11 @@ export async function POST(request: Request) {
           mode: "subscription" as const,
           line_items: [
             {
-              price: process.env.STRIPE_PRICE_TRIAL_ONE_TIME!,
+              price: stripePriceVars.trialOneTime!,
               quantity: 1,
             },
             {
-              price: process.env.STRIPE_PRICE_MONTHLY_SUB!,
+              price: stripePriceVars.monthlySub!,
               quantity: 1,
             },
           ],
@@ -101,7 +113,7 @@ export async function POST(request: Request) {
         }
       : {
           mode: "payment" as const,
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: [{ price: stripePriceVars.oneTimePdf!, quantity: 1 }],
           success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${base}/billing/checkout-return?canceled=1`,
           client_reference_id: user.id,

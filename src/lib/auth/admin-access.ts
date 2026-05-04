@@ -1,10 +1,15 @@
+import { optionalEnvTrim } from "@/lib/env/server";
+
 /**
- * Single configured operator for admin analytics (`ADMIN_ANALYTICS_EMAIL`).
- * Not set in env → no one can sign in to `/admin` or view `/admin/dashboard`.
+ * Operator allowlist for admin analytics routes (`ADMIN_ANALYTICS_EMAIL`).
+ *
+ * See `docs/ENVIRONMENT.md` — **security**: omit in production unless you intentionally want
+ * the dashboard; comparison is lowercased equality only (exact email match, no substring/wildcards).
+ *
+ * Empty / unset env → `/admin/dashboard` inaccessible (sign-in rejects); UI still exists but has no privileged user.
  */
 export function getConfiguredAdminAnalyticsEmail(): string | null {
-  const v = process.env.ADMIN_ANALYTICS_EMAIL?.trim();
-  return v || null;
+  return optionalEnvTrim("ADMIN_ANALYTICS_EMAIL") ?? null;
 }
 
 export function isAdminAnalyticsAuthorized(

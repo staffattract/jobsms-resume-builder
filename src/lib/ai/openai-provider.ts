@@ -1,4 +1,4 @@
-import { resolveOpenAIModel } from "@/lib/ai/config";
+import { getOpenAiApiKey, resolveOpenAIModel } from "@/lib/ai/config";
 import type { AIProvider, ChatMessage } from "@/lib/ai/types";
 
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -59,7 +59,7 @@ function extractOutputText(data: ResponsesCreateBody): string {
 export class OpenAIProvider implements AIProvider {
   readonly name = "openai";
 
-  constructor(  
+  constructor(
     private readonly apiKey: string,
     private readonly model: string,
   ) {}
@@ -105,9 +105,5 @@ export class OpenAIProvider implements AIProvider {
 }
 
 export function createOpenAIProviderFromEnv(): OpenAIProvider {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
-  }
-  return new OpenAIProvider(apiKey, resolveOpenAIModel());
+  return new OpenAIProvider(getOpenAiApiKey(), resolveOpenAIModel());
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { getStripeWebhookSecret } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/client";
 import { handleStripeWebhookEvent } from "@/lib/stripe/handle-webhook-event";
 
@@ -7,13 +8,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  let webhookSecret: string;
+  try {
+    webhookSecret = getStripeWebhookSecret();
+  } catch {
+    console.error(
+      "[stripe-webhook] STRIPE_WEBHOOK_SECRET is missing — webhook handler is disabled.",
+    );
+    return NextResponse.json(
+      {
+        error: "Stripe webhook signing secret is not configured.",
+        code: "STRIPE_WEBHOOK_UNCONFIGURED",
+      },
+      { status: 503 },
+    );
+  }
+
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   console.log("[stripe-webhook] diagnostics", {
-    hasWebhookSecret: Boolean(webhookSecret),
-    webhookSecretLength: webhookSecret?.length ?? 0,
+    hasWebhookSecret: true,
     signatureHeaderPresent: Boolean(signature),
     runtime: "nodejs",
     rawBodyLength: rawBody.length,
@@ -29,7 +44,7 @@ export async function POST(request: Request) {
     event = getStripe().webhooks.constructEvent(
       rawBody,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET as string,
+      webhookSecret,
     );
   } catch {
     console.log("[stripe-webhook] signature_verified=false");
