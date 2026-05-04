@@ -1,15 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { sanitizeCheckoutReturnPath } from "@/lib/stripe/checkout-return-path";
 
 type PollState = "idle" | "polling" | "ready" | "timeout";
 
 export function CheckoutReturnClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const canceled = searchParams.get("canceled") === "1";
   const sessionId = searchParams.get("session_id");
+  const fallbackHome = sanitizeCheckoutReturnPath(
+    searchParams.get("return_path"),
+  );
+
+  const afterCheckoutHref = fallbackHome ?? "/resumes";
 
   const [pollState, setPollState] = useState<PollState>(() => {
     if (canceled || !sessionId) {
@@ -51,6 +58,12 @@ export function CheckoutReturnClient() {
     };
   }, [canceled, sessionId]);
 
+  useEffect(() => {
+    if (pollState === "ready" && afterCheckoutHref) {
+      router.replace(afterCheckoutHref);
+    }
+  }, [pollState, router, afterCheckoutHref]);
+
   if (canceled) {
     return (
       <div>
@@ -58,12 +71,14 @@ export function CheckoutReturnClient() {
           Checkout canceled
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          No charges were made. You can return to your resumes and try again
-          anytime.
+          No charges were made. You can return and try again anytime.
         </p>
         <p className="mt-4">
-          <Link href="/resumes" className="text-sm text-blue-600 underline">
-            Back to resumes
+          <Link
+            href={afterCheckoutHref}
+            className="text-sm text-blue-600 underline"
+          >
+            Continue
           </Link>
         </p>
       </div>
@@ -81,8 +96,11 @@ export function CheckoutReturnClient() {
           and export PDFs.
         </p>
         <p className="mt-4">
-          <Link href="/resumes" className="text-sm text-blue-600 underline">
-            Back to resumes
+          <Link
+            href={afterCheckoutHref}
+            className="text-sm text-blue-600 underline"
+          >
+            Continue
           </Link>
         </p>
       </div>
@@ -107,19 +125,15 @@ export function CheckoutReturnClient() {
     return (
       <div>
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-          You&apos;re all set
+          Redirecting…
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          PDF downloads are now unlocked. Open a resume and use{" "}
-          <strong className="font-medium text-zinc-800 dark:text-zinc-200">
-            Download PDF
-          </strong>
-          .
-        </p>
-        <p className="mt-4">
-          <Link href="/resumes" className="text-sm text-blue-600 underline">
-            Back to resumes
+          Taking you back to continue — if nothing happens,
+          {" "}
+          <Link href={afterCheckoutHref} className="text-blue-600 underline">
+            open this link
           </Link>
+          .
         </p>
       </div>
     );
@@ -135,8 +149,11 @@ export function CheckoutReturnClient() {
         or check that your Stripe webhook is configured and receiving events.
       </p>
       <p className="mt-4">
-        <Link href="/resumes" className="text-sm text-blue-600 underline">
-          Back to resumes
+        <Link
+          href={afterCheckoutHref}
+          className="text-sm text-blue-600 underline"
+        >
+          Continue
         </Link>
       </p>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JobInteractionStatus } from "@/generated/prisma/client";
 import { updateResumeContent } from "@/lib/resume/actions";
 import type { TailorResult } from "@/lib/ai/actions";
@@ -14,11 +14,74 @@ import type {
 } from "@/lib/jobs/employment-alert-types";
 import { isAllowedEmploymentAlertJobUrl } from "@/lib/jobs/job-listing-url";
 import { TailorJobModal } from "@/components/resume/TailorJobModal";
+import { PdfPaywallModal } from "@/components/resume/PdfPaywallModal";
 import {
   btnPrimary,
   btnSecondary,
   labelClass,
 } from "@/components/resume/form-classes";
+
+const JOBS_TAILOR_FLOW_V1 = "jobs_tailor_flow_v1";
+
+type TailorFlowBanner = {
+  resumeId: string;
+  resumeTitle: string;
+  job: JobListing;
+};
+
+function readTailorBannerFromBrowser(): TailorFlowBanner | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const raw = sessionStorage.getItem(JOBS_TAILOR_FLOW_V1);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      sessionStorage.removeItem(JOBS_TAILOR_FLOW_V1);
+      return null;
+    }
+    const o = parsed as Partial<TailorFlowBanner>;
+    const job = o.job;
+    if (
+      typeof o.resumeId !== "string" ||
+      typeof o.resumeTitle !== "string" ||
+      !job ||
+      typeof job !== "object" ||
+      typeof (job as JobListing).externalJobId !== "string" ||
+      typeof (job as JobListing).url !== "string" ||
+      !isAllowedEmploymentAlertJobUrl((job as JobListing).url)
+    ) {
+      sessionStorage.removeItem(JOBS_TAILOR_FLOW_V1);
+      return null;
+    }
+    return {
+      resumeId: o.resumeId,
+      resumeTitle: o.resumeTitle,
+      job: job as JobListing,
+    };
+  } catch {
+    sessionStorage.removeItem(JOBS_TAILOR_FLOW_V1);
+    return null;
+  }
+}
+
+function persistTailorBanner(payload: TailorFlowBanner | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    if (!payload) {
+      sessionStorage.removeItem(JOBS_TAILOR_FLOW_V1);
+    } else {
+      sessionStorage.setItem(JOBS_TAILOR_FLOW_V1, JSON.stringify(payload));
+    }
+  } catch {
+    // ignore quota
+  }
+}
 
 type InteractionDto = {
   id: string;
@@ -109,9 +172,46 @@ export function JobsPageClient({
     () => documents.find((r) => r.id === resumeId),
     [documents, resumeId],
   );
+  const tailorFlowJobRef = useRef<JobListing | null>(null);
+
+  const [tailorBanner, setTailorBannerState] = useState<TailorFlowBanner | null>(
+    () => readTailorBannerFromBrowser(),
+  );
+
+  const setTailorBanner = useCallback((next: TailorFlowBanner | null) => {
+    setTailorBannerState(next);
+    persistTailorBanner(next);
+  }, []);
+
   const [tailorOpen, setTailorOpen] = useState(false);
   const [tailorJob, setTailorJob] = useState<JobListing | null>(null);
-  const [tailorApplied, setTailorApplied] = useState<string | null>(null);
+
+  const [pdfPaywallOpen, setPdfPaywallOpen] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [tailorBannerPdfMessage, setTailorBannerPdfMessage] = useState<
+    string | null
+  >(null);
+
+  const fetchEntitlements = useCallback(async (): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/me/entitlements", {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        return false;
+      }
+      const data = (await res.json()) as { canDownloadPdf?: boolean };
+      return !!data.canDownloadPdf;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pdfPaywallOpen) {
+      void fetchEntitlements();
+    }
+  }, [pdfPaywallOpen, fetchEntitlements]);
 
   const search = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,26 +292,165 @@ export function JobsPageClient({
     updateRowInteraction(String(extra.externalJobId), inter);
   };
 
-  async function handleOpenListing(job: JobListing) {
+  async function maybeRecordClick(job: JobListing) {
     if (!lastQuery) {
-      setError("Run a search first before opening listings.");
       return;
     }
+    await postSnapshot(
+      "click",
+      snapshotFromListing(job, lastQuery.keyword, lastQuery.location),
+    );
+  }
 
+  /**
+   * Open the listing URL (`window.open`).
+   * When user came from results with an active query, optionally records a click server-side first.
+   */
+  async function openJobPostingUrl(
+    job: JobListing,
+    options: { requireSearchBeforeOpen: boolean; recordClick: boolean },
+  ) {
     if (!isAllowedEmploymentAlertJobUrl(job.url)) {
       setError("That listing link is unavailable.");
       return;
     }
-
-    try {
-      await postSnapshot(
-        "click",
-        snapshotFromListing(job, lastQuery.keyword, lastQuery.location),
-      );
-    } catch {
-      setError("Click could not be recorded; opening the listing anyway.");
+    if (options.requireSearchBeforeOpen && !lastQuery) {
+      setError("Run a search first before opening listings.");
+      return;
+    }
+    if (options.recordClick && lastQuery) {
+      try {
+        await maybeRecordClick(job);
+      } catch {
+        setError(
+          "Click could not be recorded; opening the listing anyway.",
+        );
+      }
+    }
+    if (!isAllowedEmploymentAlertJobUrl(job.url)) {
+      setError("That listing link is unavailable.");
+      return;
     }
     window.open(job.url, "_blank", "noopener,noreferrer");
+  }
+
+  async function downloadTailoredResumePdf(targetResumeId: string) {
+    setPdfDownloading(true);
+    setTailorBannerPdfMessage(null);
+    try {
+      const entRes = await fetch("/api/me/entitlements", {
+        credentials: "include",
+      });
+      if (!entRes.ok) {
+        setTailorBannerPdfMessage(
+          "Could not verify download access. Please try again.",
+        );
+        return;
+      }
+      const ent = (await entRes.json()) as { canDownloadPdf?: boolean };
+      if (!ent.canDownloadPdf) {
+        setPdfPaywallOpen(true);
+        return;
+      }
+
+      const res = await fetch(`/api/resume/${targetResumeId}/pdf`, {
+        credentials: "include",
+      });
+
+      if (res.status === 403) {
+        try {
+          const body = (await res.json()) as { code?: string };
+          if (body?.code === "PDF_ENTITLEMENT_REQUIRED") {
+            setPdfPaywallOpen(true);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+        setTailorBannerPdfMessage("Could not generate PDF. Please try again.");
+        return;
+      }
+
+      if (!res.ok) {
+        setTailorBannerPdfMessage("Could not generate PDF. Please try again.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const cd = res.headers.get("Content-Disposition");
+      let filename = "resume.pdf";
+      const m = cd?.match(/filename="([^"]+)"/);
+      if (m?.[1]) {
+        filename = m[1];
+      }
+      const dlUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      a.download = filename;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(dlUrl);
+      void fetchEntitlements();
+    } catch {
+      setTailorBannerPdfMessage("Could not generate PDF. Please try again.");
+    } finally {
+      setPdfDownloading(false);
+    }
+  }
+
+  async function handleVisitJobFromTailorBanner() {
+    if (!tailorBanner) {
+      return;
+    }
+    setTailorBannerPdfMessage(null);
+    if (!isAllowedEmploymentAlertJobUrl(tailorBanner.job.url)) {
+      setTailorBannerPdfMessage("That listing link is unavailable.");
+      return;
+    }
+    if (lastQuery) {
+      try {
+        await maybeRecordClick(tailorBanner.job);
+      } catch {
+        setTailorBannerPdfMessage(
+          "Visit could not be recorded; opening the listing anyway.",
+        );
+      }
+    }
+    if (!isAllowedEmploymentAlertJobUrl(tailorBanner.job.url)) {
+      setTailorBannerPdfMessage("That listing link is unavailable.");
+      return;
+    }
+    window.open(tailorBanner.job.url, "_blank", "noopener,noreferrer");
+  }
+
+  async function handleOpenListing(job: JobListing) {
+    setError(null);
+    await openJobPostingUrl(job, {
+      requireSearchBeforeOpen: true,
+      recordClick: true,
+    });
+  }
+
+  async function tailorApply(payload: TailorResult) {
+    if (!resume) {
+      return;
+    }
+
+    const next = mergeTailorIntoContent(resume.content, payload);
+    await updateResumeContent(resume.id, next);
+    setDocuments((prev) =>
+      prev.map((r) => (r.id === resume.id ? { ...r, content: next } : r)),
+    );
+    const jobSnap = tailorFlowJobRef.current;
+    if (jobSnap && isAllowedEmploymentAlertJobUrl(jobSnap.url)) {
+      setTailorBanner({
+        resumeId: resume.id,
+        resumeTitle: resume.title,
+        job: jobSnap,
+      });
+    }
   }
 
   async function handleStatus(job: JobListing, status: JobInteractionStatus) {
@@ -229,19 +468,6 @@ export function JobsPageClient({
     } catch {
       setError("Could not save job status.");
     }
-  }
-
-  async function tailorApply(payload: TailorResult) {
-    if (!resume) {
-      return;
-    }
-
-    const next = mergeTailorIntoContent(resume.content, payload);
-    await updateResumeContent(resume.id, next);
-    setDocuments((prev) =>
-      prev.map((r) => (r.id === resume.id ? { ...r, content: next } : r)),
-    );
-    setTailorApplied(resume.title);
   }
 
   return (
@@ -274,6 +500,12 @@ export function JobsPageClient({
           initialJobDescription={descriptionFromListing(tailorJob)}
         />
       ) : null}
+
+      <PdfPaywallModal
+        open={pdfPaywallOpen}
+        onClose={() => setPdfPaywallOpen(false)}
+        checkoutReturnPath="/jobs"
+      />
 
       <form
         onSubmit={(e) => void search(e)}
@@ -360,11 +592,44 @@ export function JobsPageClient({
         </p>
       ) : null}
 
-      {tailorApplied ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-950 dark:border-emerald-900/45 dark:bg-emerald-950/35 dark:text-emerald-50">
-          Suggestions saved to{' '}
-          <span className="font-semibold">{tailorApplied}</span>.
-        </p>
+      {tailorBanner ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 dark:border-emerald-900/45 dark:bg-emerald-950/35 dark:text-emerald-50 sm:px-6 sm:py-5">
+          <p className="text-sm font-medium text-emerald-950 dark:text-emerald-50">
+            Suggestions saved to{" "}
+            <span className="font-semibold">{tailorBanner.resumeTitle}</span>.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-emerald-900/85 dark:text-emerald-100/85">
+            Next: download your tailored resume, then open the job listing to apply.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              className={`${btnPrimary} text-sm`}
+              disabled={pdfDownloading}
+              onClick={() =>
+                void downloadTailoredResumePdf(tailorBanner.resumeId)
+              }
+            >
+              {pdfDownloading ? "Preparing PDF…" : "Download tailored resume"}
+            </button>
+            <button
+              type="button"
+              className={`${btnSecondary} text-sm`}
+              disabled={pdfDownloading}
+              onClick={() => void handleVisitJobFromTailorBanner()}
+            >
+              Visit job
+            </button>
+          </div>
+          {tailorBannerPdfMessage ? (
+            <p
+              className="mt-3 text-sm font-medium text-red-800 dark:text-red-200"
+              role="alert"
+            >
+              {tailorBannerPdfMessage}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {meta && Object.keys(meta).length > 0 ? (
@@ -463,6 +728,8 @@ export function JobsPageClient({
                     className={`${btnSecondary} text-sm`}
                     disabled={busy}
                     onClick={() => {
+                      tailorFlowJobRef.current = job;
+                      setTailorBanner(null);
                       setTailorJob(job);
                       setTailorOpen(true);
                     }}

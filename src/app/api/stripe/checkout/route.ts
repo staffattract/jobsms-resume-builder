@@ -10,6 +10,7 @@ import {
   getStripePriceTrialOneTime,
 } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/client";
+import { sanitizeCheckoutReturnPath } from "@/lib/stripe/checkout-return-path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,8 @@ function shortErrorMessage(err: unknown): string {
 
 const bodySchema = z.object({
   kind: z.enum(["one_time", "subscription"]),
+  /** Optional safe in-app pathname (e.g. `/jobs`) to round-trip via checkout-return + client redirect */
+  returnPath: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -85,6 +88,11 @@ export async function POST(request: Request) {
     baseMetadata.ad_id = adId;
   }
 
+  const returnPathQs = sanitizeCheckoutReturnPath(parsed.data.returnPath ?? "");
+  const returnQs = returnPathQs
+    ? `&return_path=${encodeURIComponent(returnPathQs)}`
+    : "";
+
   const sessionPayload =
     parsed.data.kind === "subscription"
       ? {
@@ -103,8 +111,8 @@ export async function POST(request: Request) {
             trial_period_days: 10,
             metadata: { ...baseMetadata },
           },
-          success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${base}/billing/checkout-return?canceled=1`,
+          success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}${returnQs}`,
+          cancel_url: `${base}/billing/checkout-return?canceled=1${returnQs}`,
           client_reference_id: user.id,
           metadata: { ...baseMetadata },
           customer: user.stripeCustomerId ?? undefined,
@@ -114,8 +122,8 @@ export async function POST(request: Request) {
       : {
           mode: "payment" as const,
           line_items: [{ price: stripePriceVars.oneTimePdf!, quantity: 1 }],
-          success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${base}/billing/checkout-return?canceled=1`,
+          success_url: `${base}/billing/checkout-return?session_id={CHECKOUT_SESSION_ID}${returnQs}`,
+          cancel_url: `${base}/billing/checkout-return?canceled=1${returnQs}`,
           client_reference_id: user.id,
           metadata: { ...baseMetadata },
           customer: user.stripeCustomerId ?? undefined,

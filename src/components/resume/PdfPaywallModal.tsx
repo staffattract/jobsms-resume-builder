@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** Passed to `/api/stripe/checkout` → checkout-return redirects back here when allow-listed */
+  checkoutReturnPath?: string;
 };
 
 function CheckIcon({ className }: { className?: string }) {
@@ -27,7 +29,11 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-export function PdfPaywallModal({ open, onClose }: Props) {
+export function PdfPaywallModal({
+  open,
+  onClose,
+  checkoutReturnPath,
+}: Props) {
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +65,12 @@ export function PdfPaywallModal({ open, onClose }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ kind: "subscription" }),
+        body: JSON.stringify({
+          kind: "subscription",
+          ...(checkoutReturnPath?.trim()
+            ? { returnPath: checkoutReturnPath.trim() }
+            : {}),
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
